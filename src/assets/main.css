@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #1e3a8a; /* Dark blue from the design */
+  --color-secondary: #e3a008; /* Yellow from the design */
+  --color-accent: #0369a1; /* Light blue accent */
+  --color-neutral: #f8fafc; /* Light background */
+
+  /* gradient blue */
+  --color-blue-300: #1954d6;
+  --color-blue-400: #1a56db;
+  --color-blue-500: #0e2e75;
+
+  /* gradient yellow */
+  --color-yellow-400: #e3a008;
+  --color-yellow-500: #ded601;
+
+  --font-family-sans: Inter, sans-serif;
+  --font-family-heading: Poppins, sans-serif;
+
+  --spacing-128: 32rem;
+  --spacing-144: 36rem;
+
+  --border-radius-xl: 1rem;
+  --border-radius-2xl: 1.5rem;
+  --border-radius-3xl: 2rem;
+
+  --box-shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --box-shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  --breakpoint-xs: 475px;
+}
+
+@layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-shadow-soft {
+    text-shadow: var(--box-shadow-soft);
+  }
+  .card {
+    box-shadow: var(--box-shadow-card);
+  }
+}
