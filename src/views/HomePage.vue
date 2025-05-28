@@ -1,3 +1,61 @@
+<script setup>
+import { ref } from 'vue'
+
+const extracurriculars = ref([
+  {
+    name: 'Tahfidz',
+    overlayColor: 'bg-blue-900',
+    bgImage: '/images/placeholder.png',
+  },
+  {
+    name: 'Menggambar',
+    overlayColor: 'bg-yellow-500',
+    bgImage: '/images/placeholder.png',
+  },
+  {
+    name: 'Futsal',
+    overlayColor: 'bg-blue-600',
+    bgImage: '/images/placeholder.png',
+  },
+  {
+    name: 'Sepak Bola',
+    overlayColor: 'bg-green-600',
+    bgImage: '/images/placeholder.png',
+  },
+  {
+    name: 'Pramuka',
+    overlayColor: 'bg-yellow-700',
+    bgImage: '/images/placeholder.png',
+  },
+  {
+    name: 'Atletik',
+    overlayColor: 'bg-yellow-500',
+    bgImage: '/images/placeholder.png',
+  },
+])
+
+const testimonials = ref([
+  {
+    id: 1,
+    name: 'GRACE',
+    message: 'Sekolah Al Farabi memberikan pengalaman belajar yang menyenangkan!',
+    avatar: '/images/testimonials.webp',
+  },
+  {
+    id: 2,
+    name: 'GRACE',
+    message: 'Sekolah Al Farabi memberikan pengalaman belajar yang menyenangkan!',
+    avatar: '/images/testimonials.webp',
+  },
+  {
+    id: 3,
+    name: 'GRACE',
+    message: 'Sekolah Al Farabi memberikan pengalaman belajar yang menyenangkan!',
+    avatar: '/images/testimonials.webp',
+  },
+])
+</script>
+
 <template>
   <div class="min-h-screen bg-white">
     <section class="w-full">
@@ -161,19 +219,13 @@
                     class="bg-blue-300 rounded p-2 text-center text-xs text-white flex flex-col justify-center"
                   >
                     <div>BUKU</div>
-                    <div>LKS</div>
-                  </div>
-                  <div
-                    class="bg-blue-300 rounded p-2 text-center text-xs text-white flex flex-col justify-center"
-                  >
-                    <div>BUKU</div>
-                    <div>PAKET</div>
+                    <div>PAKET & LKS</div>
                   </div>
                 </div>
               </div>
 
               <router-link
-                to="/daftar/yatim"
+                to="/daftar"
                 class="block w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white font-bold py-4 rounded-lg transition-colors text-center text-xl shadow-lg"
               >
                 DAFTAR KHUSUS<br />ANAK YATIM
@@ -226,7 +278,7 @@
               </div>
 
               <router-link
-                to="/daftar/regular"
+                to="/daftar"
                 class="block w-full bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-4 rounded-lg transition-colors text-center text-xl shadow-lg"
               >
                 DAFTAR<br />REGULER
@@ -323,7 +375,6 @@
         </div>
       </section>
 
-      <!-- Testimonials -->
       <section class="py-16 px-4 sm:px-6 lg:px-8">
         <div class="max-w-6xl mx-auto">
           <div class="bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-2xl p-16">
@@ -349,61 +400,3 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref } from 'vue'
-
-const extracurriculars = ref([
-  {
-    name: 'Tahfidz',
-    overlayColor: 'bg-blue-900',
-    bgImage: '/images/placeholder.png',
-  },
-  {
-    name: 'Menggambar',
-    overlayColor: 'bg-yellow-500',
-    bgImage: '/images/placeholder.png',
-  },
-  {
-    name: 'Futsal',
-    overlayColor: 'bg-blue-600',
-    bgImage: '/images/placeholder.png',
-  },
-  {
-    name: 'Sepak Bola',
-    overlayColor: 'bg-green-600',
-    bgImage: '/images/placeholder.png',
-  },
-  {
-    name: 'Pramuka',
-    overlayColor: 'bg-yellow-700',
-    bgImage: '/images/placeholder.png',
-  },
-  {
-    name: 'Atletik',
-    overlayColor: 'bg-yellow-500',
-    bgImage: '/images/placeholder.png',
-  },
-])
-
-const testimonials = ref([
-  {
-    id: 1,
-    name: 'GRACE',
-    message: 'Sekolah Al Farabi memberikan pengalaman belajar yang menyenangkan!',
-    avatar: '/images/testimonials.webp',
-  },
-  {
-    id: 2,
-    name: 'GRACE',
-    message: 'Sekolah Al Farabi memberikan pengalaman belajar yang menyenangkan!',
-    avatar: '/images/testimonials.webp',
-  },
-  {
-    id: 3,
-    name: 'GRACE',
-    message: 'Sekolah Al Farabi memberikan pengalaman belajar yang menyenangkan!',
-    avatar: '/images/testimonials.webp',
-  },
-])
-</script>

@@ -47,18 +47,13 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div class="bg-white rounded-3xl shadow-lg p-6 flex items-center">
-          <div class="p-4 rounded-xl mr-6">
+          <div class="mr-6">
             <img src="/images/email.png" alt="email icon" class="w-32 h-32 object-contain" />
           </div>
 
           <div>
-            <h3 class="text-3xl text-blue-300 mb-2 font-extrabold">Email</h3>
-            <a
-              href="mailto:alfarabimuttaqin@gmail.com"
-              class="font-semibold text-blue-300 text-xl hover:underline"
-            >
-              alfarabimuttaqin@gmail.com
-            </a>
+            <h3 class="text-3xl font-extrabold text-blue-300 mb-2">Email</h3>
+            <p class="font-semibold text-blue-300 md:text-xl text-sm">alfarabimuttaqin@gmail.com</p>
           </div>
         </div>
 

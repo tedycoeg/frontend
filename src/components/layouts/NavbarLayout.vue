@@ -1,8 +1,21 @@
+<script setup>
+import { ref } from 'vue'
+
+const mobileMenuOpen = ref(false)
+
+const toggleMobileMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+const closeMobileMenu = () => {
+  mobileMenuOpen.value = false
+}
+</script>
+
 <template>
   <nav class="bg-white shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-24">
-        <!-- Logo and School Info -->
         <div class="flex items-center space-x-4">
           <router-link to="/" class="flex items-center space-x-3">
             <div class="w-16 h-16 flex-shrink-0">
@@ -23,7 +36,6 @@
           </router-link>
         </div>
 
-        <!-- Desktop Navigation -->
         <div class="hidden lg:flex space-x-1">
           <router-link
             to="/"
@@ -104,7 +116,6 @@
           </router-link>
         </div>
 
-        <!-- Mobile menu button -->
         <div class="lg:hidden">
           <button
             @click="toggleMobileMenu"
@@ -122,7 +133,6 @@
         </div>
       </div>
 
-      <!-- Mobile Navigation -->
       <div v-if="mobileMenuOpen" class="lg:hidden">
         <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t">
           <router-link
@@ -214,17 +224,3 @@
     </div>
   </nav>
 </template>
-
-<script setup>
-import { ref } from 'vue'
-
-const mobileMenuOpen = ref(false)
-
-const toggleMobileMenu = () => {
-  mobileMenuOpen.value = !mobileMenuOpen.value
-}
-
-const closeMobileMenu = () => {
-  mobileMenuOpen.value = false
-}
-</script>

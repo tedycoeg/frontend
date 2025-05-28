@@ -47,7 +47,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <router-link
-            to="/daftar/yatim"
+            to="/daftar"
             class="block w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white text-center font-bold py-8 px-4 rounded-2xl text-2xl shadow-lg transition-colors"
           >
             DAFTAR KHUSUS<br />ANAK YATIM
@@ -55,7 +55,7 @@
         </div>
         <div>
           <router-link
-            to="/daftar/reguler"
+            to="/daftar"
             class="block w-full bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white text-center font-bold py-8 px-4 rounded-2xl text-2xl shadow-lg transition-colors"
           >
             DAFTAR<br />REGULER

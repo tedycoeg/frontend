@@ -1,3 +1,7 @@
+<script setup>
+import { Icon } from '@iconify/vue'
+</script>
+
 <template>
   <div class="min-h-screen bg-gray-100 py-8">
     <section class="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto mb-12">
@@ -202,7 +206,3 @@
     </section>
   </div>
 </template>
-
-<script setup>
-import { Icon } from '@iconify/vue'
-</script>
