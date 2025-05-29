@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useNewsStore } from '@/stores/berita'
 
@@ -15,6 +15,19 @@ const contentParagraphs = computed(() => {
   if (!contentItem.value) return []
   return contentItem.value.content.split('\n\n').filter((p) => p.trim() !== '')
 })
+
+watch(
+  contentItem,
+  (newItem) => {
+    if (newItem) {
+      const contentType = newItem.type === 'berita' ? 'Berita' : 'Prestasi'
+      document.title = `Al-Farabi - ${contentType}: ${newItem.title}`
+    } else {
+      document.title = 'Al-Farabi - Konten Tidak Ditemukan'
+    }
+  },
+  { immediate: true },
+)
 
 const goBack = () => {
   router.back()

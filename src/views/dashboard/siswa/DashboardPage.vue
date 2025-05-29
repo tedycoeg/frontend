@@ -4,11 +4,7 @@ import { Icon } from '@iconify/vue'
 
 <template>
   <div>
-    <h1
-      class="text-2xl md:text-3xl font-bold text-gray-800 mb-6 transition-all duration-300 ease-in-out"
-    >
-      Dashboard Calon Peserta Didik
-    </h1>
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Dashboard Calon Peserta Didik</h1>
 
     <div
       class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 mb-6 border border-blue-200 shadow-sm"

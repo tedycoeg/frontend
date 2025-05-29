@@ -64,11 +64,7 @@ const submitDocuments = async () => {
 
 <template>
   <div>
-    <h1
-      class="text-2xl md:text-3xl font-bold text-gray-800 mb-6 transition-all duration-300 ease-in-out"
-    >
-      Unggah Berkas
-    </h1>
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Unggah Berkas</h1>
 
     <div v-if="!uploadSuccess">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

@@ -20,7 +20,7 @@ const closeMobileMenu = () => {
           <router-link to="/" class="flex items-center space-x-3">
             <div class="w-16 h-16 flex-shrink-0">
               <img
-                src="/images/logo.png"
+                src="/images/logo.svg"
                 alt="Logo Sekolah Al-Farabi"
                 class="w-full h-full rounded-full"
               />

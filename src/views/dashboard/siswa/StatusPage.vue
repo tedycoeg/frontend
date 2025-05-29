@@ -19,11 +19,7 @@ const status = ref('processing')
 
 <template>
   <div>
-    <h1
-      class="text-2xl md:text-3xl font-bold text-gray-800 mb-6 transition-all duration-300 ease-in-out"
-    >
-      Hasil Seleksi
-    </h1>
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Hasil Seleksi</h1>
 
     <div v-if="status === 'processing'" class="flex flex-col items-center">
       <div

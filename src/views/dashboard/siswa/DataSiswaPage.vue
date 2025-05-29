@@ -52,9 +52,7 @@ const saveProfile = async () => {
 
 <template>
   <div>
-    <h1
-      class="text-2xl md:text-3xl font-bold text-gray-800 mb-6 transition-all duration-300 ease-in-out"
-    >
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
       Form Pengisian Data Calon Siswa
     </h1>
 

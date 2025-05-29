@@ -9,13 +9,16 @@ const email = ref('')
 const password = ref('')
 
 const handleLogin = async () => {
-  const result = await authStore.login({
-    email: email.value,
-    password: password.value,
-  })
+  const result = await authStore.login(
+    {
+      email: email.value,
+      password: password.value,
+    },
+    'admin',
+  )
 
   if (result.success) {
-    router.push('/dashboard')
+    router.push('/admin/dashboard')
   }
 }
 </script>
@@ -29,7 +32,7 @@ const handleLogin = async () => {
       <h1 class="text-2xl font-bold text-white text-center">PENDAFTARAN PESERTA DIDIK BARU</h1>
     </div>
 
-    <h2 class="text-4xl font-bold text-white mb-8">LOGIN USER</h2>
+    <h2 class="text-4xl font-bold text-white mb-8">LOGIN ADMIN</h2>
 
     <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
       <form @submit.prevent="handleLogin" class="space-y-6">

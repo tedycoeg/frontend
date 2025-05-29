@@ -58,23 +58,23 @@ Program "Ramadhan Peduli" ini direncanakan akan menjadi agenda rutin tahunan Sek
         date: '20 Maret 2025',
         content: `Sekolah Al-Farabi sukses menyelenggarakan Seminar Parenting dengan tema "Membangun Generasi Tangguh di Era Digital" yang diikuti oleh lebih dari 200 orang tua siswa dari semua jenjang pendidikan. Seminar yang berlangsung selama sehari penuh ini menghadirkan tiga pembicara utama yang merupakan pakar di bidang psikologi anak, pendidikan, dan teknologi.
 
-Dr. Ratna Dewi, seorang psikolog anak terkemuka, membawakan materi tentang "Pola Asuh yang Tepat untuk Anak Generasi Alpha". Beliau menekankan pentingnya komunikasi terbuka dan pendampingan orang tua di tengah arus informasi yang sangat cepat saat ini.
+  Dr. Ratna Dewi, seorang psikolog anak terkemuka, membawakan materi tentang "Pola Asuh yang Tepat untuk Anak Generasi Alpha". Beliau menekankan pentingnya komunikasi terbuka dan pendampingan orang tua di tengah arus informasi yang sangat cepat saat ini.
 
-"Anak-anak saat ini tumbuh dengan akses informasi yang tidak terbatas. Tugas kita sebagai orang tua adalah memastikan mereka memiliki filter dan kemampuan berpikir kritis yang baik," ujar Dr. Ratna dalam presentasinya.
+  "Anak-anak saat ini tumbuh dengan akses informasi yang tidak terbatas. Tugas kita sebagai orang tua adalah memastikan mereka memiliki filter dan kemampuan berpikir kritis yang baik," ujar Dr. Ratna dalam presentasinya.
 
-Sementara itu, Prof. Hendra Wijaya dari Fakultas Ilmu Pendidikan Universitas Indonesia berbicara tentang "Memahami Gaya Belajar Anak dan Implikasinya dalam Pendampingan Belajar di Rumah". Beliau memberikan tips praktis bagi orang tua untuk mengenali dan mengakomodasi gaya belajar anak yang berbeda-beda.
+  Sementara itu, Prof. Hendra Wijaya dari Fakultas Ilmu Pendidikan Universitas Indonesia berbicara tentang "Memahami Gaya Belajar Anak dan Implikasinya dalam Pendampingan Belajar di Rumah". Beliau memberikan tips praktis bagi orang tua untuk mengenali dan mengakomodasi gaya belajar anak yang berbeda-beda.
 
-Pembicara ketiga, Ir. Budi Santoso, seorang pakar teknologi pendidikan, membahas tentang "Memanfaatkan Teknologi secara Positif dalam Pengasuhan Anak". Beliau memberikan panduan tentang bagaimana orang tua dapat memanfaatkan teknologi sebagai alat bantu pendidikan, sekaligus mengajarkan anak untuk menggunakan teknologi secara bijak.
+  Pembicara ketiga, Ir. Budi Santoso, seorang pakar teknologi pendidikan, membahas tentang "Memanfaatkan Teknologi secara Positif dalam Pengasuhan Anak". Beliau memberikan panduan tentang bagaimana orang tua dapat memanfaatkan teknologi sebagai alat bantu pendidikan, sekaligus mengajarkan anak untuk menggunakan teknologi secara bijak.
 
-Seminar ini juga dilengkapi dengan sesi tanya jawab dan diskusi kelompok yang memungkinkan para orang tua untuk berbagi pengalaman dan mendapatkan solusi atas permasalahan yang dihadapi dalam pengasuhan anak.
+  Seminar ini juga dilengkapi dengan sesi tanya jawab dan diskusi kelompok yang memungkinkan para orang tua untuk berbagi pengalaman dan mendapatkan solusi atas permasalahan yang dihadapi dalam pengasuhan anak.
 
-"Kami sangat senang dengan antusiasme para orang tua. Ini menunjukkan bahwa mereka sangat peduli dengan pendidikan dan perkembangan anak-anak mereka," kata Ibu Siti Aminah, Ketua Komite Sekolah Al-Farabi yang juga menjadi moderator dalam seminar tersebut.
+  "Kami sangat senang dengan antusiasme para orang tua. Ini menunjukkan bahwa mereka sangat peduli dengan pendidikan dan perkembangan anak-anak mereka," kata Ibu Siti Aminah, Ketua Komite Sekolah Al-Farabi yang juga menjadi moderator dalam seminar tersebut.
 
-Berdasarkan formulir evaluasi yang dibagikan di akhir acara, lebih dari 90% peserta merasa puas dengan materi dan pelaksanaan seminar. Banyak yang mengusulkan agar kegiatan serupa diadakan secara rutin dengan topik-topik yang berbeda.
+  Berdasarkan formulir evaluasi yang dibagikan di akhir acara, lebih dari 90% peserta merasa puas dengan materi dan pelaksanaan seminar. Banyak yang mengusulkan agar kegiatan serupa diadakan secara rutin dengan topik-topik yang berbeda.
 
-Kepala Sekolah Al-Farabi, Ibu Lailatul Husna, menyampaikan bahwa pihak sekolah berkomitmen untuk terus mengadakan program-program yang melibatkan orang tua sebagai mitra dalam pendidikan anak.
+  Kepala Sekolah Al-Farabi, Ibu Lailatul Husna, menyampaikan bahwa pihak sekolah berkomitmen untuk terus mengadakan program-program yang melibatkan orang tua sebagai mitra dalam pendidikan anak.
 
-"Pendidikan adalah tanggung jawab bersama antara sekolah dan keluarga. Dengan adanya sinergi yang baik, kita dapat memastikan anak-anak kita tumbuh menjadi individu yang cerdas, berkarakter, dan siap menghadapi tantangan masa depan," tutupnya.`,
+  "Pendidikan adalah tanggung jawab bersama antara sekolah dan keluarga. Dengan adanya sinergi yang baik, kita dapat memastikan anak-anak kita tumbuh menjadi individu yang cerdas, berkarakter, dan siap menghadapi tantangan masa depan," tutupnya.`,
         excerpt: 'Kegiatan Ini Diikuti Lebih Dari 200 Orang Tua Siswa Dari Semua Jenjang'
       },
       {

@@ -60,7 +60,7 @@ const printRegistration = () => {
     <div class="container mx-auto px-4 py-6 print:hidden">
       <div class="flex flex-col items-center">
         <router-link to="/" class="mb-4">
-          <img src="/images/logo.png" alt="Al-Farabi Logo" class="h-24" />
+          <img src="/images/logo.svg" alt="Al-Farabi Logo" class="h-24" />
         </router-link>
         <div class="text-center">
           <h1 class="text-xl md:text-2xl font-bold text-primary">PENDAFTARAN PESERTA DIDIK BARU</h1>
