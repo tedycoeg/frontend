@@ -34,7 +34,7 @@ const logout = () => {
         <div class="space-y-4">
           <router-link
             to="/dashboard"
-            class="flex items-center justify-center bg-white text-primary font-medium py-2 px-4 rounded-lg w-full shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5"
+            class="flex items-center justify-center bg-white text-primary font-medium py-2 px-4 rounded-lg w-full shadow-sm hover:shadow-md"
             :class="{
               'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white':
                 $route.path === '/dashboard',
@@ -45,7 +45,7 @@ const logout = () => {
 
           <router-link
             to="/dashboard/data-siswa"
-            class="flex items-center justify-center bg-white text-primary font-medium py-2 px-4 rounded-lg w-full shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5"
+            class="flex items-center justify-center bg-white text-primary font-medium py-2 px-4 rounded-lg w-full shadow-sm hover:shadow-md"
             :class="{
               'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white':
                 $route.path === '/dashboard/data-siswa',
@@ -56,7 +56,7 @@ const logout = () => {
 
           <router-link
             to="/dashboard/berkas"
-            class="flex items-center justify-center bg-white text-primary font-medium py-2 px-4 rounded-lg w-full shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5"
+            class="flex items-center justify-center bg-white text-primary font-medium py-2 px-4 rounded-lg w-full shadow-sm hover:shadow-md"
             :class="{
               'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white':
                 $route.path === '/dashboard/berkas',
@@ -67,7 +67,7 @@ const logout = () => {
 
           <router-link
             to="/dashboard/status"
-            class="flex items-center justify-center bg-white text-primary font-medium py-2 px-4 rounded-lg w-full shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5"
+            class="flex items-center justify-center bg-white text-primary font-medium py-2 px-4 rounded-lg w-full shadow-sm hover:shadow-md"
             :class="{
               'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white':
                 $route.path === '/dashboard/status',
@@ -78,7 +78,7 @@ const logout = () => {
 
           <button
             @click="logout"
-            class="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg w-full mt-8 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5"
+            class="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg w-full mt-8 shadow-sm hover:shadow-md"
           >
             <Icon icon="material-symbols:logout-rounded" width="24" height="24" class="mr-2" />
             Keluar

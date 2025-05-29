@@ -61,7 +61,7 @@ import { Icon } from '@iconify/vue'
         </ol>
         <div class="mt-4">
           <router-link
-            to="/dashboard/profile"
+            to="/dashboard/data-siswa"
             class="bg-blue-300 text-white font-medium py-2 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 flex items-center w-max"
           >
             <Icon icon="material-symbols:edit-rounded" width="20" height="20" class="mr-2" />

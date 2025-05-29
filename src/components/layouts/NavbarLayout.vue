@@ -200,12 +200,12 @@ const closeMobileMenu = () => {
             @click="closeMobileMenu"
             class="block px-3 py-2 text-base font-bold rounded-md transition-all duration-200"
             :class="
-              $route.path.includes('/daftar')
+              $route.path === '/daftar'
                 ? 'bg-primary text-white'
                 : 'text-primary hover:text-blue-800 hover:bg-blue-50'
             "
           >
-            Daftar
+            DAFTAR
           </router-link>
           <router-link
             to="/login"
