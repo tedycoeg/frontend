@@ -15,10 +15,21 @@ const props = defineProps({
 const router = useRouter()
 const authStore = useAuthStore()
 
+// TEMPORARY: Bypass authentication check as requested by UI/UX team
+// TODO: REMOVE THIS AUTO-LOGIN AND RESTORE AUTHENTICATION CHECKS BEFORE PRODUCTION
+// Original code:
+// onMounted(async () => {
+//   const isAuthenticated = await authStore.checkAuth(props.role)
+//   if (!isAuthenticated) {
+//     router.push(props.role === 'admin' ? '/admin/login' : '/login')
+//   }
+// })
 onMounted(async () => {
-  const isAuthenticated = await authStore.checkAuth(props.role)
-  if (!isAuthenticated) {
-    router.push(props.role === 'admin' ? '/admin/login' : '/login')
+  // Auto-login for development purposes
+  if (props.role === 'admin') {
+    authStore.autoLoginAdmin()
+  } else {
+    authStore.autoLoginSiswa()
   }
 })
 

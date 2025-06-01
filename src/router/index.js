@@ -168,23 +168,28 @@ const router = createRouter({
 
 // Navigation guard untuk autentikasi
 router.beforeEach((to, from, next) => {
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-  const requiresAdminAuth = to.matched.some(record => record.meta.requiresAdminAuth)
-  const token = localStorage.getItem('token')
-  const adminToken = localStorage.getItem('adminToken')
-
   // Mengatur title berdasarkan route meta
   const defaultTitle = 'Al-Farabi Islamic School'
   document.title = to.meta.title || defaultTitle
 
-  // Cek autentikasi
-  if (requiresAuth && !token) {
-    next('/login')
-  } else if (requiresAdminAuth && !adminToken) {
-    next('/admin/login')
-  } else {
-    next()
-  }
+  // TEMPORARY: Bypass authentication checks as requested by UI/UX team
+  // TODO: REMOVE THIS BYPASS AND RESTORE AUTHENTICATION CHECKS BEFORE PRODUCTION
+  // Original code:
+  // const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  // const requiresAdminAuth = to.matched.some(record => record.meta.requiresAdminAuth)
+  // const token = localStorage.getItem('token')
+  // const adminToken = localStorage.getItem('adminToken')
+  //
+  // // Cek autentikasi
+  // if (requiresAuth && !token) {
+  //   next('/login')
+  // } else if (requiresAdminAuth && !adminToken) {
+  //   next('/admin/login')
+  // } else {
+  //   next()
+  // }
+
+  next()
 })
 
 export default router
