@@ -207,12 +207,10 @@ const updateStatus = (id, newStatus) => {
 }
 
 const downloadData = () => {
-  // This would be replaced with an actual API call to download data
   alert('Data calon siswa akan diunduh dalam format Excel')
 }
 
 const downloadDocument = (id) => {
-  // This would be replaced with an actual API call to download document
   alert(`Dokumen siswa dengan ID ${id} akan diunduh dalam format PDF`)
 }
 </script>

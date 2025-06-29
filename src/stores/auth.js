@@ -18,45 +18,11 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    // TEMPORARY: Auto-login functions for development without authentication
-    // TODO: REMOVE THESE FUNCTIONS BEFORE PRODUCTION
-    autoLoginSiswa() {
-      const mockUser = {
-        id: 1,
-        name: 'Demo User',
-        email: 'demo@example.com',
-        role: 'student'
-      }
-
-      const mockToken = 'mock-jwt-token-' + Math.random().toString(36).substring(2)
-      this.user = mockUser
-      this.token = mockToken
-      localStorage.setItem('token', mockToken)
-    },
-
-    autoLoginAdmin() {
-      const mockUser = {
-        id: 1,
-        name: 'Administrator',
-        email: 'admin@alfarabi.com',
-        role: 'admin'
-      }
-
-      const mockToken = 'admin-mock-jwt-token-' + Math.random().toString(36).substring(2)
-      this.user = mockUser
-      this.adminToken = mockToken
-      localStorage.setItem('adminToken', mockToken)
-    },
-
     async login(credentials, role = 'siswa') {
       this.isLoading = true
       this.error = null
 
       try {
-        // Dalam lingkungan pengembangan, kita masih menggunakan data palsu
-        // Tapi struktur kode sudah disiapkan untuk API yang sebenarnya
-
-        // Contoh bagaimana kode akan terlihat dengan API nyata:
         // const response = await api.post(apiEndpoints.auth.login, {
         //   email: credentials.email,
         //   password: credentials.password,
@@ -68,7 +34,7 @@ export const useAuthStore = defineStore('auth', {
         // localStorage.setItem('token', response.token)
         // return { success: true }
 
-        // Kode sementara untuk pengembangan:
+        // Kode sementara untuk development:
         await new Promise(resolve => setTimeout(resolve, 1000))
 
         if (role === 'admin') {

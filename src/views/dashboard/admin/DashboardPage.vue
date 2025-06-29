@@ -18,14 +18,12 @@ const dashboardData = ref({
 })
 
 const downloadData = () => {
-  // This would be replaced with an actual API call to download data
   alert('Data akan diunduh dalam format Excel')
 }
 </script>
 
 <template>
   <div>
-    <!-- <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-8">Dashboard Admin</h1> -->
     <div class="bg-gradient-to-r from-blue-400 to-blue-500 rounded-xl p-6 mb-8">
       <h1 class="text-3xl font-bold text-white">Dashboard Admin</h1>
     </div>

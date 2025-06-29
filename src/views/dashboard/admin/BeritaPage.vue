@@ -87,8 +87,6 @@ const deleteBerita = (id) => {
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
   if (file) {
-    // In a real application, this would upload the file to a server
-    // For now, we'll just create a fake URL
     const fakeUrl = URL.createObjectURL(file)
     if (isEditing.value && selectedBerita.value) {
       selectedBerita.value.gambar = fakeUrl
