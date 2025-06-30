@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia'
 
+// Constants
+const API_URL = 'https://api.al-farabi.id/register'
+const ERROR_DEFAULT_MESSAGE = 'Gagal mendaftar, silakan cek data Anda'
+
 export const useRegistrationStore = defineStore('registration', {
   state: () => ({
     registrationData: null,
@@ -9,17 +13,37 @@ export const useRegistrationStore = defineStore('registration', {
   }),
 
   actions: {
+    /**
+     * Submit registration data to the server
+     * @param {Object} formData - Registration form data
+     * @returns {Promise<boolean>} - Success status
+     */
     async submitRegistration(formData) {
       this.isSubmitting = true
       this.registrationError = null
 
       try {
-        await new Promise(resolve => setTimeout(resolve, 1500))
-
+        // Map form data to API payload structure
+        const payload = this._mapFormDataToPayload(formData)
+        
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.message || ERROR_DEFAULT_MESSAGE)
+        }
+        
+        await response.json() // Process response data if needed
+        
+        // Update store state on success
         this.registrationData = { ...formData }
-
         this.registrationSuccess = true
-
         return true
       } catch (error) {
         this.registrationError = error.message || 'Terjadi kesalahan saat mengirim data pendaftaran'
@@ -29,10 +53,28 @@ export const useRegistrationStore = defineStore('registration', {
       }
     },
 
+    /**
+     * Reset registration state
+     */
     resetRegistration() {
       this.registrationData = null
       this.registrationSuccess = false
       this.registrationError = null
+    },
+    
+    /**
+     * Map form data to API payload structure
+     * @param {Object} formData - Registration form data
+     * @returns {Object} - API payload
+     * @private
+     */
+    _mapFormDataToPayload(formData) {
+      return {
+        nama: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        captcha: formData.captcha
+      }
     }
   }
 })

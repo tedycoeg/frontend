@@ -2,11 +2,22 @@ import { defineStore } from 'pinia'
 // eslint-disable-next-line no-unused-vars
 import { api, apiEndpoints } from '@/services/api'
 
+// Constants
+const API_LOGIN_URL = 'https://api.al-farabi.id/login'
+const TOKEN_KEYS = {
+  admin: 'adminToken',
+  siswa: 'token'
+}
+const ERROR_MESSAGES = {
+  invalidCredentials: 'Email atau password tidak valid',
+  default: 'Terjadi kesalahan saat login'
+}
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
-    token: localStorage.getItem('token') || null,
-    adminToken: localStorage.getItem('adminToken') || null,
+    token: localStorage.getItem(TOKEN_KEYS.siswa) || null,
+    adminToken: localStorage.getItem(TOKEN_KEYS.admin) || null,
     isLoading: false,
     error: null
   }),
@@ -18,134 +29,113 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    /**
+     * Login a user with credentials
+     * @param {Object} credentials - User credentials (email, password)
+     * @param {string} role - User role ('admin' or 'siswa')
+     * @returns {Promise<Object>} - Login result
+     */
     async login(credentials, role = 'siswa') {
-      this.isLoading = true
-      this.error = null
-
+      this._setLoadingState(true)
+      
       try {
-        // const response = await api.post(apiEndpoints.auth.login, {
-        //   email: credentials.email,
-        //   password: credentials.password,
-        //   role: role
-        // })
-        //
-        // this.user = response.user
-        // this.token = response.token
-        // localStorage.setItem('token', response.token)
-        // return { success: true }
-
-        // Kode sementara untuk development:
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        if (role === 'admin') {
-          if (credentials.email === 'admin@alfarabi.com' && credentials.password === 'admin123') {
-            const mockUser = {
-              id: 1,
-              name: 'Administrator',
-              email: credentials.email,
-              role: 'admin'
-            }
-
-            const mockToken = 'admin-mock-jwt-token-' + Math.random().toString(36).substring(2)
-
-            this.user = mockUser
-            this.adminToken = mockToken
-
-            localStorage.setItem('adminToken', mockToken)
-
-            return { success: true }
-          } else {
-            throw new Error('Email atau password admin tidak valid')
-          }
+        const response = await fetch(API_LOGIN_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: credentials.email,
+            password: credentials.password
+          }),
+        })
+        
+        const data = await response.json()
+        const payload = data.payload || {}
+        const userData = payload.data || {}
+        
+        if (userData.token) {
+          return this._handleLoginSuccess(userData, role)
         } else {
-          if (credentials.email === 'demo@example.com' && credentials.password === 'password') {
-            const mockUser = {
-              id: 1,
-              name: 'Demo User',
-              email: credentials.email,
-              role: 'student'
-            }
-
-            const mockToken = 'mock-jwt-token-' + Math.random().toString(36).substring(2)
-
-            this.user = mockUser
-            this.token = mockToken
-
-            localStorage.setItem('token', mockToken)
-
-            return { success: true }
-          } else {
-            throw new Error('Email atau password tidak valid')
-          }
+          throw new Error(payload.message || ERROR_MESSAGES.invalidCredentials)
         }
       } catch (error) {
-        this.error = error.message || 'Terjadi kesalahan saat login'
-        return { success: false, error: this.error }
+        return this._handleLoginError(error)
       } finally {
-        this.isLoading = false
+        this._setLoadingState(false)
       }
     },
 
+    /**
+     * Logout the current user
+     * @param {string} role - User role ('admin' or 'siswa')
+     */
     logout(role = 'siswa') {
-      // Contoh penggunaan API untuk logout:
-      // try {
-      //   await api.post(apiEndpoints.auth.logout, {}, { isAdmin: role === 'admin' })
-      // } catch (error) {
-      //   console.error('Error during logout:', error)
-      // }
-
       this.user = null
-
-      if (role === 'admin') {
-        this.adminToken = null
-        localStorage.removeItem('adminToken')
-      } else {
-        this.token = null
-        localStorage.removeItem('token')
-      }
+      const tokenKey = this._getTokenKeyForRole(role)
+      
+      this[tokenKey] = null
+      localStorage.removeItem(tokenKey)
     },
 
+    /**
+     * Check if user is authenticated
+     * @param {string} role - User role ('admin' or 'siswa')
+     * @returns {boolean} - Authentication status
+     */
     async checkAuth(role = 'siswa') {
-      const tokenKey = role === 'admin' ? 'adminToken' : 'token'
-      const tokenValue = this[tokenKey]
-
-      if (tokenValue) {
-        try {
-          // Contoh penggunaan API untuk verifikasi token:
-          // const user = await api.get(apiEndpoints.auth.me, { isAdmin: role === 'admin' })
-          // this.user = user
-          // return true
-
-          // Kode sementara untuk pengembangan:
-          await new Promise(resolve => setTimeout(resolve, 500))
-
-          if (role === 'admin' && tokenValue.startsWith('admin-mock-jwt-token-')) {
-            this.user = {
-              id: 1,
-              name: 'Administrator',
-              email: 'admin@alfarabi.com',
-              role: 'admin'
-            }
-            return true
-          } else if (role === 'siswa' && tokenValue.startsWith('mock-jwt-token-')) {
-            this.user = {
-              id: 1,
-              name: 'Demo User',
-              email: 'demo@example.com',
-              role: 'student'
-            }
-            return true
-          } else {
-            this.logout(role)
-            return false
-          }
-        } catch (err) {
-          console.error('Error checking authentication:', err)
-          this.logout(role)
-          return false
-        }
+      const tokenKey = this._getTokenKeyForRole(role)
+      return !!this[tokenKey]
+    },
+    
+    /**
+     * Set loading state
+     * @param {boolean} isLoading - Loading state
+     * @private
+     */
+    _setLoadingState(isLoading) {
+      this.isLoading = isLoading
+      if (isLoading) {
+        this.error = null
       }
-      return false
+    },
+    
+    /**
+     * Handle successful login
+     * @param {Object} userData - User data from API
+     * @param {string} role - User role
+     * @returns {Object} - Success result
+     * @private
+     */
+    _handleLoginSuccess(userData, role) {
+      this.user = userData.user || null
+      const tokenKey = this._getTokenKeyForRole(role)
+      
+      this[tokenKey] = userData.token
+      localStorage.setItem(tokenKey, userData.token)
+      
+      return { success: true }
+    },
+    
+    /**
+     * Handle login error
+     * @param {Error} error - Error object
+     * @returns {Object} - Error result
+     * @private
+     */
+    _handleLoginError(error) {
+      this.error = error.message || ERROR_MESSAGES.default
+      return { success: false, error: this.error }
+    },
+    
+    /**
+     * Get token key based on user role
+     * @param {string} role - User role
+     * @returns {string} - Token key
+     * @private
+     */
+    _getTokenKeyForRole(role) {
+      return role === 'admin' ? TOKEN_KEYS.admin : TOKEN_KEYS.siswa
     }
   }
 })
