@@ -1,24 +1,108 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 
+// State untuk unggah dokumen
 const isSubmitting = ref(false)
 const selectedFile = ref(null)
 const uploadSuccess = ref(false)
 const fileInput = ref(null)
+const isLoading = ref(true)
+const documentStatus = ref(null)
+const errorMsg = ref('')
+const showErrorModal = ref(false)
 
+// Constants untuk validasi file
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB dalam bytes
+const ALLOWED_FILE_TYPE = 'application/pdf'
+
+// Utility untuk HTTP requests
+const makeApiRequest = async (url, method = 'GET', body = null) => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Token tidak ditemukan, silakan login kembali')
+  }
+
+  const options = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  }
+
+  if (body) {
+    options.body = body
+  }
+
+  const response = await fetch(url, options)
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || `Gagal melakukan operasi ${method}`)
+  }
+
+  return response
+}
+
+// Fungsi untuk menampilkan pesan error
+const showError = (message) => {
+  errorMsg.value = message
+  showErrorModal.value = true
+  setTimeout(() => {
+    showErrorModal.value = false
+  }, 5000) 
+}
+
+// Fungsi untuk menutup modal error
+const closeErrorModal = () => {
+  showErrorModal.value = false
+}
+
+// Fungsi untuk memeriksa status dokumen saat halaman dimuat
+const checkDocumentStatus = async () => {
+  isLoading.value = true
+  try {
+    const response = await makeApiRequest('https://api.al-farabi.id/pendaftaran/cekstatus')
+    const data = await response.json()
+    
+    // Jika sudah ada status pendaftaran dan dokumen sudah diupload
+    if (data.payload && data.payload.data) {
+      documentStatus.value = data.payload.data
+      
+      // Jika dokumen sudah diupload, tampilkan pesan sukses
+      if (data.payload.data.dokumen) {
+        uploadSuccess.value = true
+      }
+    }
+  } catch (error) {
+    console.error('Error checking document status:', error)
+    // Error menampilkan status tidak mengubah tampilan
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Validasi file yang dipilih
+const validateFile = (file) => {
+  if (file.size > MAX_FILE_SIZE) {
+    showError('Ukuran file terlalu besar. Maksimal 5MB.')
+    return false
+  }
+
+  if (file.type !== ALLOWED_FILE_TYPE) {
+    showError('Format file harus PDF.')
+    return false
+  }
+
+  return true
+}
+
+// Handler untuk file yang diupload
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  if (file.size > 5 * 1024 * 1024) {
-    alert('Ukuran file terlalu besar. Maksimal 5MB.')
-    event.target.value = ''
-    return
-  }
-
-  if (file.type !== 'application/pdf') {
-    alert('Format file harus PDF.')
+  if (!validateFile(file)) {
     event.target.value = ''
     return
   }
@@ -26,6 +110,7 @@ const handleFileUpload = (event) => {
   selectedFile.value = file
 }
 
+// Hapus file yang dipilih
 const removeFile = () => {
   selectedFile.value = null
   if (fileInput.value) {
@@ -33,40 +118,59 @@ const removeFile = () => {
   }
 }
 
+// Format ukuran file untuk tampilan
 const formatFileSize = (bytes) => {
   if (bytes < 1024) return bytes + ' bytes'
   else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'
   else return (bytes / 1048576).toFixed(1) + ' MB'
 }
 
+// Kirim dokumen ke server
 const submitDocuments = async () => {
   if (!selectedFile.value) {
-    alert('Silahkan pilih file terlebih dahulu.')
+    showError('Silahkan pilih file terlebih dahulu.')
     return
   }
 
   isSubmitting.value = true
 
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    // Membuat form data untuk upload
+    const formData = new FormData()
+    formData.append('dokumen', selectedFile.value)
+    
+    await makeApiRequest('https://api.al-farabi.id/siswa/dokumen', 'POST', formData)
 
-    console.log('Document submitted:', selectedFile.value)
-
+    // Sukses upload
     uploadSuccess.value = true
+    // Refresh status dokumen
+    await checkDocumentStatus()
   } catch (error) {
     console.error('Error submitting document:', error)
-    alert('Terjadi kesalahan saat mengirim dokumen')
+    showError(error.message || 'Terjadi kesalahan saat mengirim dokumen')
   } finally {
     isSubmitting.value = false
   }
 }
+
+// Load data saat komponen dimuat
+onMounted(() => {
+  checkDocumentStatus()
+})
 </script>
 
 <template>
   <div>
     <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Unggah Berkas</h1>
 
-    <div v-if="!uploadSuccess">
+    <!-- Loading indicator -->
+    <div v-if="isLoading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <span class="ml-3 text-lg text-blue-500 font-medium">Memuat status dokumen...</span>
+    </div>
+
+    <!-- Form upload dokumen -->
+    <div v-else-if="!uploadSuccess">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div
           class="bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl p-5 text-white shadow-md transform hover:scale-102 transition-all duration-300"
@@ -211,6 +315,7 @@ const submitDocuments = async () => {
       </div>
     </div>
 
+    <!-- Status sukses -->
     <div v-else class="flex flex-col items-center">
       <div
         class="bg-green-50 rounded-xl p-8 flex flex-col items-center justify-center mb-6 w-full shadow-md border border-green-200"
@@ -234,11 +339,45 @@ const submitDocuments = async () => {
           </svg>
         </div>
         <h3 class="text-2xl font-bold text-green-600 mb-2">Berkas Telah Diunggah</h3>
-        <p class="text-green-600 text-center">
+        <p class="text-green-600 text-center mb-3">
           Berkas Anda telah berhasil diunggah dan sedang dalam proses verifikasi
         </p>
+        
+        <!-- Tambahan informasi status pendaftaran jika tersedia -->
+        <div v-if="documentStatus" class="w-full max-w-md bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div class="text-center mb-2">
+            <span 
+              class="inline-block px-3 py-1 rounded-full text-sm font-medium"
+              :class="{
+                'bg-yellow-100 text-yellow-800': documentStatus.status === 0, 
+                'bg-green-100 text-green-800': documentStatus.status === 1,
+                'bg-red-100 text-red-800': documentStatus.status === 2
+              }"
+            >
+              {{ documentStatus.status === 0 ? 'Menunggu Verifikasi' : 
+                 documentStatus.status === 1 ? 'Diterima' : 'Ditolak' }}
+            </span>
+          </div>
+          <p class="text-sm text-blue-700 text-center">
+            Dokumen diunggah pada: {{ new Date(documentStatus.tanggal_upload || Date.now()).toLocaleDateString('id-ID') }}
+          </p>
+          
+          <!-- Tombol upload ulang jika dokumen ditolak -->
+          <div v-if="documentStatus.status === 2" class="mt-4 flex justify-center">
+            <button 
+              @click="uploadSuccess = false" 
+              class="bg-blue-300 hover:bg-blue-400 text-white font-medium py-2 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+            >
+              <div class="flex items-center">
+                <Icon icon="material-symbols:upload" class="mr-2" width="20" height="20" />
+                Unggah Ulang Dokumen
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
 
+      <!-- Info section -->
       <div class="bg-blue-50 rounded-xl p-4 border border-blue-200 mb-6">
         <div class="flex items-start">
           <div class="flex-shrink-0 pt-0.5">
@@ -255,6 +394,41 @@ const submitDocuments = async () => {
               verifikasi.
             </p>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div 
+      v-if="showErrorModal" 
+      class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 transition-opacity"
+    >
+      <div class="bg-white rounded-lg max-w-md mx-auto p-6 shadow-2xl transform transition-all">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 bg-red-100 rounded-full p-2">
+              <Icon icon="mdi:alert" width="24" height="24" class="text-red-600" />
+            </div>
+            <h3 class="ml-3 text-lg font-medium text-gray-900">Error</h3>
+          </div>
+          <button 
+            @click="closeErrorModal" 
+            class="text-gray-400 hover:text-gray-500 focus:outline-none"
+          >
+            <Icon icon="mdi:close" width="24" height="24" />
+          </button>
+        </div>
+        <div class="mt-3">
+          <p class="text-sm text-gray-500">{{ errorMsg }}</p>
+        </div>
+        <div class="mt-5 flex justify-end">
+          <button
+            type="button"
+            @click="closeErrorModal"
+            class="bg-blue-300 hover:bg-blue-400 text-white font-medium py-2 px-4 rounded-lg"
+          >
+            Tutup
+          </button>
         </div>
       </div>
     </div>

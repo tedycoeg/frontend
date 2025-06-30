@@ -1,35 +1,16 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 
-const beritaList = ref([
-  {
-    id: 1,
-    judul: 'Penerimaan Siswa Baru Tahun Ajaran 2024/2025',
-    tanggal: '2024-05-15',
-    gambar: '/images/berita/berita-1.png',
-    isi: 'Sekolah Al-Farabi membuka pendaftaran siswa baru untuk tahun ajaran 2024/2025...',
-  },
-  {
-    id: 2,
-    judul: 'Prestasi Siswa dalam Olimpiade Matematika',
-    tanggal: '2024-04-20',
-    gambar: '/images/berita/berita-2.png',
-    isi: 'Siswa Al-Farabi berhasil meraih medali emas dalam Olimpiade Matematika Nasional...',
-  },
-  {
-    id: 3,
-    judul: 'Kunjungan Industri ke PT. Teknologi Indonesia',
-    tanggal: '2024-03-10',
-    gambar: '/images/berita/berita-3.png',
-    isi: 'Siswa SMK Al-Farabi melakukan kunjungan industri ke PT. Teknologi Indonesia...',
-  },
-])
-
+// State untuk berita
+const beritaList = ref([])
 const selectedBerita = ref(null)
 const isEditing = ref(false)
 const isAdding = ref(false)
+const isLoading = ref(false)
+const errorMsg = ref('')
 
+// State untuk form
 const newBerita = ref({
   judul: '',
   tanggal: '',
@@ -37,70 +18,228 @@ const newBerita = ref({
   isi: '',
 })
 
-const editBerita = (berita) => {
-  selectedBerita.value = { ...berita }
-  isEditing.value = true
-  isAdding.value = false
+// Referensi untuk file input
+const fileInput = ref(null)
+
+// Utility untuk HTTP requests
+const makeRequest = async (url, method = 'GET', body = null) => {
+  const token = localStorage.getItem('adminToken')
+  if (!token) {
+    throw new Error('Token tidak ditemukan, silakan login kembali')
+  }
+
+  const options = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  }
+
+  if (body) {
+    options.body = body
+  }
+
+  const response = await fetch(url, options)
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || `Gagal melakukan operasi ${method}`)
+  }
+
+  return response
 }
 
+// Fungsi untuk mengambil semua berita
+const fetchBerita = async () => {
+  isLoading.value = true
+  try {
+    const response = await makeRequest('https://api.al-farabi.id/admin/getAllBerita')
+    const data = await response.json()
+    
+    if (data && data.payload && Array.isArray(data.payload.data)) {
+      beritaList.value = data.payload.data.map(berita => ({
+        id: berita.id_berita,
+        judul: berita.judul,
+        tanggal: berita.tanggal,
+        gambar: berita.gambar,
+        isi: berita.isi
+      }))
+    }
+  } catch (error) {
+    console.error('Error fetching berita:', error)
+    errorMsg.value = error.message || 'Terjadi kesalahan saat mengambil data berita'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Menambahkan berita baru
 const addBerita = () => {
   newBerita.value = {
     judul: '',
     tanggal: new Date().toISOString().split('T')[0],
     gambar: null,
     isi: '',
+    fileToUpload: null
   }
   isAdding.value = true
   isEditing.value = false
 }
 
-const saveBerita = () => {
-  if (isEditing.value && selectedBerita.value) {
-    const index = beritaList.value.findIndex((item) => item.id === selectedBerita.value.id)
-    if (index !== -1) {
-      beritaList.value[index] = { ...selectedBerita.value }
+// Menyiapkan edit berita
+const editBerita = (berita) => {
+  selectedBerita.value = { 
+    ...berita,
+    fileToUpload: null  // Tambahan untuk menyimpan file yang akan diupload
+  }
+  isEditing.value = true
+  isAdding.value = false
+}
+
+// Menyimpan berita (create/update)
+const saveBerita = async () => {
+  isLoading.value = true
+  
+  try {
+    const formData = new FormData()
+    
+    if (isEditing.value && selectedBerita.value) {
+      // Edit berita
+      formData.append('judul', selectedBerita.value.judul)
+      formData.append('isi', selectedBerita.value.isi)
+      
+      if (selectedBerita.value.tanggal) {
+        formData.append('tanggal', selectedBerita.value.tanggal)
+      }
+      
+      if (selectedBerita.value.fileToUpload) {
+        formData.append('gambar', selectedBerita.value.fileToUpload)
+      }
+      
+      await makeRequest(
+        `https://api.al-farabi.id/admin/berita/${selectedBerita.value.id}`, 
+        'PUT', 
+        formData
+      )
+      
+      isEditing.value = false
+      selectedBerita.value = null
+      
+    } else if (isAdding.value) {
+      // Tambah berita baru
+      formData.append('judul', newBerita.value.judul)
+      formData.append('isi', newBerita.value.isi)
+      
+      if (newBerita.value.tanggal) {
+        formData.append('tanggal', newBerita.value.tanggal)
+      }
+      
+      if (newBerita.value.fileToUpload) {
+        formData.append('gambar', newBerita.value.fileToUpload)
+      } else {
+        throw new Error('Gambar harus diunggah')
+      }
+      
+      await makeRequest('https://api.al-farabi.id/admin/berita', 'POST', formData)
+      
+      isAdding.value = false
+      newBerita.value = {
+        judul: '',
+        tanggal: '',
+        gambar: null,
+        isi: '',
+        fileToUpload: null
+      }
     }
-    isEditing.value = false
-    selectedBerita.value = null
-  } else if (isAdding.value) {
-    const newId = Math.max(0, ...beritaList.value.map((item) => item.id)) + 1
-    beritaList.value.push({
-      ...newBerita.value,
-      id: newId,
-    })
-    isAdding.value = false
-    newBerita.value = {
-      judul: '',
-      tanggal: '',
-      gambar: null,
-      isi: '',
-    }
+    
+    // Refresh data berita
+    await fetchBerita()
+    
+  } catch (error) {
+    console.error('Error saving berita:', error)
+    errorMsg.value = error.message || 'Terjadi kesalahan saat menyimpan berita'
+  } finally {
+    isLoading.value = false
   }
 }
 
-const deleteBerita = (id) => {
-  if (confirm('Apakah Anda yakin ingin menghapus berita ini?')) {
-    beritaList.value = beritaList.value.filter((item) => item.id !== id)
+// Menghapus berita
+const deleteBerita = async (id) => {
+  if (!confirm('Apakah Anda yakin ingin menghapus berita ini?')) {
+    return
+  }
+  
+  isLoading.value = true
+  
+  try {
+    await makeRequest(`https://api.al-farabi.id/admin/berita/${id}`, 'DELETE')
+    
+    // Refresh data berita
+    await fetchBerita()
+    
+  } catch (error) {
+    console.error('Error deleting berita:', error)
+    errorMsg.value = error.message || 'Terjadi kesalahan saat menghapus berita'
+  } finally {
+    isLoading.value = false
   }
 }
 
+// Handle file upload
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
-  if (file) {
-    const fakeUrl = URL.createObjectURL(file)
-    if (isEditing.value && selectedBerita.value) {
-      selectedBerita.value.gambar = fakeUrl
-    } else if (isAdding.value) {
-      newBerita.value.gambar = fakeUrl
-    }
+  if (!file) return
+  
+  // Validasi tipe file (gambar)
+  if (!file.type.match('image.*')) {
+    alert('Format file harus gambar (JPG, PNG, dll)')
+    event.target.value = ''
+    return
+  }
+  
+  // Validasi ukuran file (max 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Ukuran gambar terlalu besar. Maksimal 2MB.')
+    event.target.value = ''
+    return
+  }
+  
+  const fakeUrl = URL.createObjectURL(file)
+  
+  if (isEditing.value && selectedBerita.value) {
+    selectedBerita.value.gambar = fakeUrl
+    selectedBerita.value.fileToUpload = file
+  } else if (isAdding.value) {
+    newBerita.value.gambar = fakeUrl
+    newBerita.value.fileToUpload = file
   }
 }
+
+// Format tanggal
+const formatDate = (dateString) => {
+  try {
+    return new Date(dateString).toLocaleDateString('id-ID')
+  } catch (error) {
+    return dateString
+  }
+}
+
+// Load berita saat halaman dimuat
+onMounted(() => {
+  fetchBerita()
+})
 </script>
 
 <template>
   <div>
     <div class="bg-gradient-to-r from-blue-400 to-blue-500 rounded-xl p-6 mb-8">
       <h1 class="text-3xl font-bold text-white">Berita</h1>
+    </div>
+
+    <!-- Error message -->
+    <div v-if="errorMsg" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+      <span>{{ errorMsg }}</span>
+      <button @click="errorMsg = ''" class="float-right font-bold">&times;</button>
     </div>
 
     <div class="flex justify-start mb-8">
@@ -134,6 +273,24 @@ const handleFileUpload = (event) => {
             "
             placeholder="Tambah Judul"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Tanggal</label>
+          <input
+            type="date"
+            :value="isEditing ? (selectedBerita ? selectedBerita.tanggal?.slice(0, 10) : '') : newBerita.tanggal"
+            @input="
+              (e) =>
+                isEditing
+                  ? selectedBerita
+                    ? (selectedBerita.tanggal = e.target.value)
+                    : null
+                  : (newBerita.tanggal = e.target.value)
+            "
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -152,7 +309,7 @@ const handleFileUpload = (event) => {
             </div>
             <label class="cursor-pointer text-gray-500">
               Tambah Foto
-              <input type="file" class="hidden" @change="handleFileUpload" accept="image/*" />
+              <input type="file" class="hidden" @change="handleFileUpload" accept="image/*" ref="fileInput" />
             </label>
           </div>
         </div>
@@ -179,11 +336,48 @@ const handleFileUpload = (event) => {
           <button
             @click="saveBerita"
             class="bg-blue-300 hover:bg-blue-400 text-white font-medium py-3 px-8 rounded-lg transition duration-300 cursor-pointer"
+            :disabled="isLoading"
           >
-            Simpan
+            <span v-if="isLoading" class="flex items-center justify-center">
+              <svg
+                class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Menyimpan...
+            </span>
+            <span v-else>Simpan</span>
           </button>
         </div>
       </div>
+    </div>
+
+    <div v-else-if="isLoading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <span class="ml-3 text-lg text-blue-500 font-medium">Memuat data berita...</span>
+    </div>
+
+    <div v-else-if="beritaList.length === 0" class="bg-white rounded-lg shadow-md p-8 text-center">
+      <div class="text-gray-500 mb-4">
+        <Icon icon="mdi:information-outline" width="48" height="48" class="mx-auto" />
+      </div>
+      <h3 class="text-xl font-medium text-gray-600 mb-2">Belum Ada Berita</h3>
+      <p class="text-gray-500 mb-4">Klik tombol "Tambah" untuk membuat berita baru.</p>
     </div>
 
     <div v-else>
@@ -204,9 +398,17 @@ const handleFileUpload = (event) => {
             </button>
           </div>
           <p class="text-gray-500 mb-4">
-            {{ new Date(berita.tanggal).toLocaleDateString('id-ID') }}
+            {{ formatDate(berita.tanggal) }}
           </p>
-          <p class="text-gray-700 line-clamp-3">{{ berita.isi }}</p>
+          <div class="flex mb-4">
+            <img 
+              v-if="berita.gambar" 
+              :src="berita.gambar" 
+              alt="Thumbnail berita" 
+              class="w-32 h-24 object-cover rounded-lg mr-4"
+            />
+            <p class="text-gray-700 line-clamp-3 flex-1">{{ berita.isi }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -216,6 +418,7 @@ const handleFileUpload = (event) => {
 <style scoped>
 .line-clamp-3 {
   display: -webkit-box;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

@@ -4,21 +4,29 @@ import { useRegistrationStore } from '@/stores/registration'
 
 const registrationStore = useRegistrationStore()
 
-onMounted(() => {
-  registrationStore.resetRegistration()
-  generateCaptcha()
-})
+// Constants
+const CAPTCHA_URL_BASE = 'https://api.al-farabi.id/captcha'
 
+// State
+const captchaUrl = ref('')
 const formData = ref({
   registrationType: 'regular',
   fullName: '',
   email: '',
   password: '',
-  captchaInput: '',
+  captcha: '',
 })
 
-const captcha = ref('')
+/**
+ * Fetch new captcha image with timestamp to prevent caching
+ */
+const fetchCaptcha = () => {
+  captchaUrl.value = `${CAPTCHA_URL_BASE}?${Date.now()}`
+}
 
+/**
+ * Computed property to get registration type label
+ */
 const registrationTypeLabel = computed(() => {
   if (!registrationStore.registrationData) return ''
   return registrationStore.registrationData.registrationType === 'orphan'
@@ -26,33 +34,28 @@ const registrationTypeLabel = computed(() => {
     : 'Reguler'
 })
 
-const generateCaptcha = () => {
-  const characters = '0123456789'
-  let result = ''
-  const charactersLength = characters.length
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength))
-  }
-  captcha.value = result
-}
-
+/**
+ * Submit registration form
+ */
 const submitForm = async () => {
-  if (formData.value.captchaInput !== captcha.value) {
-    alert('CAPTCHA tidak valid. Silakan coba lagi.')
-    generateCaptcha()
-    formData.value.captchaInput = ''
-    return
-  }
-
   await registrationStore.submitRegistration({
     ...formData.value,
-    captcha: captcha.value,
   })
 }
 
+/**
+ * Print registration details
+ */
 const printRegistration = () => {
   window.print()
 }
+
+// Initialize component
+onMounted(() => {
+  // Reset registration state and fetch new captcha
+  registrationStore.resetRegistration()
+  fetchCaptcha()
+})
 </script>
 
 <template>
@@ -144,12 +147,12 @@ const printRegistration = () => {
           <div class="space-y-3">
             <div class="flex items-center">
               <span class="text-gray-700 mr-4">CAPTCHA</span>
-              <div class="bg-blue-800 text-white px-4 py-2 rounded font-mono text-lg">
-                {{ captcha }}
+              <div class=" text-white px-4 py-2 rounded font-mono text-lg">
+                <img :src="captchaUrl" alt="CAPTCHA" class="h-16 w-auto">
               </div>
               <button
                 type="button"
-                @click="generateCaptcha"
+                @click="fetchCaptcha"
                 class="ml-2 p-2 text-blue-600 hover:text-blue-800"
                 title="Refresh Captcha"
               >
@@ -172,7 +175,7 @@ const printRegistration = () => {
             <div>
               <input
                 type="text"
-                v-model="formData.captchaInput"
+                v-model="formData.captcha"
                 placeholder="Captcha ?"
                 class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
