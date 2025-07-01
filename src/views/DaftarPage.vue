@@ -5,10 +5,11 @@ import { useRegistrationStore } from '@/stores/registration'
 const registrationStore = useRegistrationStore()
 
 // Constants
-const CAPTCHA_URL_BASE = 'https://api.al-farabi.id/captcha'
+const CAPTCHA_URL_BASE = '/api/captcha'
 
 // State
 const captchaUrl = ref('')
+const captchaLoading = ref(false)
 const formData = ref({
   registrationType: 'regular',
   fullName: '',
@@ -20,8 +21,30 @@ const formData = ref({
 /**
  * Fetch new captcha image with timestamp to prevent caching
  */
-const fetchCaptcha = () => {
-  captchaUrl.value = `${CAPTCHA_URL_BASE}?${Date.now()}`
+const fetchCaptcha = async () => {
+  captchaLoading.value = true
+  try {
+    // Add timestamp to prevent caching
+    const url = `${CAPTCHA_URL_BASE}?${Date.now()}`
+    
+    // Use fetch with credentials to store cookies
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch captcha: ${response.status}`)
+    }
+    
+    // Convert the image to base64 to avoid second request
+    const blob = await response.blob()
+    captchaUrl.value = URL.createObjectURL(blob)
+  } catch (error) {
+    console.error('Error fetching captcha:', error)
+  } finally {
+    captchaLoading.value = false
+  }
 }
 
 /**
@@ -147,8 +170,14 @@ onMounted(() => {
           <div class="space-y-3">
             <div class="flex items-center">
               <span class="text-gray-700 mr-4">CAPTCHA</span>
-              <div class=" text-white px-4 py-2 rounded font-mono text-lg">
-                <img :src="captchaUrl" alt="CAPTCHA" class="h-16 w-auto">
+              <div class="text-white px-4 py-2 rounded font-mono text-lg">
+                <div v-if="captchaLoading" class="h-16 flex items-center justify-center">
+                  <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+                <img v-else :src="captchaUrl" alt="CAPTCHA" class="h-16 w-auto">
               </div>
               <button
                 type="button"

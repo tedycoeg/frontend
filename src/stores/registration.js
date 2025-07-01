@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 
 // Constants
-const API_URL = 'https://api.al-farabi.id/register'
+const API_URL = '/api/register'
 const ERROR_DEFAULT_MESSAGE = 'Gagal mendaftar, silakan cek data Anda'
 
 export const useRegistrationStore = defineStore('registration', {
@@ -32,6 +32,7 @@ export const useRegistrationStore = defineStore('registration', {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload),
+          credentials: 'include'
         })
         
         if (!response.ok) {

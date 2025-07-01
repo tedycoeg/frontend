@@ -15,4 +15,17 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    host: 'al-farabi.walver.dev',
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'https://api.al-farabi.id',
+        changeOrigin: true,
+        secure: true,
+        cookieDomainRewrite: 'al-farabi.walver.dev',
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
+  }
 })
