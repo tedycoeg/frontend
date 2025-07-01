@@ -4,8 +4,10 @@ import { useRegistrationStore } from '@/stores/registration'
 
 const registrationStore = useRegistrationStore()
 
-// Constants
-const CAPTCHA_URL_BASE = '/api/captcha'
+const isDevelopment = import.meta.env.DEV
+const CAPTCHA_URL_BASE = isDevelopment 
+  ? '/api/captcha'
+  : 'https://api.al-farabi.id/captcha'
 
 // State
 const captchaUrl = ref('')
@@ -24,10 +26,8 @@ const formData = ref({
 const fetchCaptcha = async () => {
   captchaLoading.value = true
   try {
-    // Add timestamp to prevent caching
     const url = `${CAPTCHA_URL_BASE}?${Date.now()}`
     
-    // Use fetch with credentials to store cookies
     const response = await fetch(url, {
       method: 'GET',
       credentials: 'include'
@@ -37,7 +37,6 @@ const fetchCaptcha = async () => {
       throw new Error(`Failed to fetch captcha: ${response.status}`)
     }
     
-    // Convert the image to base64 to avoid second request
     const blob = await response.blob()
     captchaUrl.value = URL.createObjectURL(blob)
   } catch (error) {

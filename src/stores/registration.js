@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 
 // Constants
-const API_URL = '/api/register'
+const isDevelopment = import.meta.env.DEV
+const API_URL = isDevelopment
+  ? '/api/register'
+  : 'https://api.al-farabi.id/register'
 const ERROR_DEFAULT_MESSAGE = 'Gagal mendaftar, silakan cek data Anda'
 
 export const useRegistrationStore = defineStore('registration', {
