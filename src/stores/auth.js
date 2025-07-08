@@ -4,7 +4,7 @@ import { api, apiEndpoints } from '@/services/api'
 
 // Constants
 // Gunakan proxy di lingkungan development
-const API_BASE_URL = '/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 const TOKEN_KEYS = {
   admin: 'adminToken',
   siswa: 'token'

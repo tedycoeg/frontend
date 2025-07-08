@@ -5,7 +5,7 @@ import { useRegistrationStore } from '@/stores/registration'
 const registrationStore = useRegistrationStore()
 
 // Constants
-const API_BASE_URL = '/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 const CAPTCHA_URL = `${API_BASE_URL}/captcha`
 
 // State

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 
 // Constants
-const API_BASE_URL = '/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 const API_REGISTER_URL = `${API_BASE_URL}/register`
 const ERROR_DEFAULT_MESSAGE = 'Gagal mendaftar, silakan cek data Anda'
 
