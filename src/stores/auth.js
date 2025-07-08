@@ -3,7 +3,8 @@ import { defineStore } from 'pinia'
 import { api, apiEndpoints } from '@/services/api'
 
 // Constants
-const API_LOGIN_URL = 'https://api.al-farabi.id/login'
+// Gunakan proxy di lingkungan development
+const API_BASE_URL = '/api'
 const TOKEN_KEYS = {
   admin: 'adminToken',
   siswa: 'token'
@@ -39,7 +40,7 @@ export const useAuthStore = defineStore('auth', {
       this._setLoadingState(true)
       
       try {
-        const response = await fetch(API_LOGIN_URL, {
+        const response = await fetch(`${API_BASE_URL}/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -4,29 +4,24 @@ import { useRegistrationStore } from '@/stores/registration'
 
 const registrationStore = useRegistrationStore()
 
-const isDevelopment = import.meta.env.DEV
-const CAPTCHA_URL_BASE = isDevelopment 
-  ? '/api/captcha'
-  : 'https://api.al-farabi.id/captcha'
+// Constants
+const API_BASE_URL = '/api'
+const CAPTCHA_URL = `${API_BASE_URL}/captcha`
 
 // State
 const captchaUrl = ref('')
 const captchaLoading = ref(false)
 const formData = ref({
-  registrationType: 'regular',
   fullName: '',
   email: '',
   password: '',
   captcha: '',
 })
 
-/**
- * Fetch new captcha image with timestamp to prevent caching
- */
 const fetchCaptcha = async () => {
   captchaLoading.value = true
   try {
-    const url = `${CAPTCHA_URL_BASE}?${Date.now()}`
+    const url = `${CAPTCHA_URL}?${Date.now()}`
     
     const response = await fetch(url, {
       method: 'GET',
@@ -46,35 +41,18 @@ const fetchCaptcha = async () => {
   }
 }
 
-/**
- * Computed property to get registration type label
- */
-const registrationTypeLabel = computed(() => {
-  if (!registrationStore.registrationData) return ''
-  return registrationStore.registrationData.registrationType === 'orphan'
-    ? 'Khusus Anak Yatim'
-    : 'Reguler'
-})
-
-/**
- * Submit registration form
- */
 const submitForm = async () => {
   await registrationStore.submitRegistration({
     ...formData.value,
   })
 }
 
-/**
- * Print registration details
- */
 const printRegistration = () => {
   window.print()
 }
 
 // Initialize component
 onMounted(() => {
-  // Reset registration state and fetch new captcha
   registrationStore.resetRegistration()
   fetchCaptcha()
 })
@@ -109,32 +87,6 @@ onMounted(() => {
       </div>
 
       <form @submit.prevent="submitForm">
-        <div class="mb-8">
-          <div class="flex flex-wrap gap-8">
-            <label class="flex items-center cursor-pointer">
-              <input
-                type="radio"
-                name="registrationType"
-                value="orphan"
-                v-model="formData.registrationType"
-                class="form-radio h-5 w-5 text-blue-600"
-              />
-              <span class="ml-2 text-lg">Khusus Anak Yatim</span>
-            </label>
-
-            <label class="flex items-center cursor-pointer">
-              <input
-                type="radio"
-                name="registrationType"
-                value="regular"
-                v-model="formData.registrationType"
-                class="form-radio h-5 w-5 text-blue-600"
-              />
-              <span class="ml-2 text-lg">Reguler</span>
-            </label>
-          </div>
-        </div>
-
         <div class="space-y-6">
           <div>
             <input
@@ -253,11 +205,6 @@ onMounted(() => {
           </p>
 
           <div class="space-y-4">
-            <div class="flex">
-              <div class="w-48">Jalur Pendaftaran</div>
-              <div class="font-semibold">: {{ registrationTypeLabel }}</div>
-            </div>
-
             <div class="flex">
               <div class="w-48">Nama Lengkap</div>
               <div class="font-semibold">: {{ registrationStore.registrationData.fullName }}</div>

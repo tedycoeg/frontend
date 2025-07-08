@@ -2,6 +2,14 @@
 import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 
+// API Configuration
+const API_BASE_URL = '/api'
+const API_ENDPOINTS = {
+  DOKUMEN: `${API_BASE_URL}/siswa/dokumen`,
+  STATUS: `${API_BASE_URL}/pendaftaran/cekstatus`,
+  PENDAFTARAN: `${API_BASE_URL}/pendaftaran`
+}
+
 // State untuk unggah dokumen
 const isSubmitting = ref(false)
 const selectedFile = ref(null)
@@ -58,19 +66,31 @@ const closeErrorModal = () => {
   showErrorModal.value = false
 }
 
+// Fungsi untuk mengirim notifikasi pendaftaran selesai
+const sendRegistrationCompletionNotification = async () => {
+  try {
+    // POST request tanpa body ke endpoint pendaftaran
+    await makeApiRequest(API_ENDPOINTS.PENDAFTARAN, 'POST')
+    console.log('Notifikasi pendaftaran selesai berhasil dikirim')
+  } catch (error) {
+    console.error('Error sending registration completion notification:', error)
+    // Tidak menampilkan error ke user karena ini adalah proses background
+  }
+}
+
 // Fungsi untuk memeriksa status dokumen saat halaman dimuat
 const checkDocumentStatus = async () => {
   isLoading.value = true
   try {
-    const response = await makeApiRequest('https://api.al-farabi.id/pendaftaran/cekstatus')
+    const response = await makeApiRequest(API_ENDPOINTS.STATUS)
     const data = await response.json()
     
-    // Jika sudah ada status pendaftaran dan dokumen sudah diupload
+    // Jika sudah ada status pendaftaran
     if (data.payload && data.payload.data) {
       documentStatus.value = data.payload.data
       
-      // Jika dokumen sudah diupload, tampilkan pesan sukses
-      if (data.payload.data.dokumen) {
+      // Jika status = 1 (diproses) atau lebih besar, berarti dokumen sudah diupload
+      if (data.payload.data.status >= 1) {
         uploadSuccess.value = true
       }
     }
@@ -139,12 +159,16 @@ const submitDocuments = async () => {
     const formData = new FormData()
     formData.append('dokumen', selectedFile.value)
     
-    await makeApiRequest('https://api.al-farabi.id/siswa/dokumen', 'POST', formData)
+    await makeApiRequest(API_ENDPOINTS.DOKUMEN, 'POST', formData)
 
     // Sukses upload
     uploadSuccess.value = true
+    
     // Refresh status dokumen
     await checkDocumentStatus()
+    
+    // Kirim notifikasi pendaftaran selesai
+    await sendRegistrationCompletionNotification()
   } catch (error) {
     console.error('Error submitting document:', error)
     showError(error.message || 'Terjadi kesalahan saat mengirim dokumen')
@@ -342,43 +366,10 @@ onMounted(() => {
         <p class="text-green-600 text-center mb-3">
           Berkas Anda telah berhasil diunggah dan sedang dalam proses verifikasi
         </p>
-        
-        <!-- Tambahan informasi status pendaftaran jika tersedia -->
-        <div v-if="documentStatus" class="w-full max-w-md bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div class="text-center mb-2">
-            <span 
-              class="inline-block px-3 py-1 rounded-full text-sm font-medium"
-              :class="{
-                'bg-yellow-100 text-yellow-800': documentStatus.status === 0, 
-                'bg-green-100 text-green-800': documentStatus.status === 1,
-                'bg-red-100 text-red-800': documentStatus.status === 2
-              }"
-            >
-              {{ documentStatus.status === 0 ? 'Menunggu Verifikasi' : 
-                 documentStatus.status === 1 ? 'Diterima' : 'Ditolak' }}
-            </span>
-          </div>
-          <p class="text-sm text-blue-700 text-center">
-            Dokumen diunggah pada: {{ new Date(documentStatus.tanggal_upload || Date.now()).toLocaleDateString('id-ID') }}
-          </p>
-          
-          <!-- Tombol upload ulang jika dokumen ditolak -->
-          <div v-if="documentStatus.status === 2" class="mt-4 flex justify-center">
-            <button 
-              @click="uploadSuccess = false" 
-              class="bg-blue-300 hover:bg-blue-400 text-white font-medium py-2 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
-            >
-              <div class="flex items-center">
-                <Icon icon="material-symbols:upload" class="mr-2" width="20" height="20" />
-                Unggah Ulang Dokumen
-              </div>
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- Info section -->
-      <div class="bg-blue-50 rounded-xl p-4 border border-blue-200 mb-6">
+      <div class="bg-blue-50 rounded-xl p-8 border border-blue-200 mb-6 w-full">
         <div class="flex items-start">
           <div class="flex-shrink-0 pt-0.5">
             <Icon icon="healthicons:info-24px" width="24" height="24" class="text-primary" />

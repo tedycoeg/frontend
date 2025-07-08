@@ -1,10 +1,8 @@
 import { defineStore } from 'pinia'
 
 // Constants
-const isDevelopment = import.meta.env.DEV
-const API_URL = isDevelopment
-  ? '/api/register'
-  : 'https://api.al-farabi.id/register'
+const API_BASE_URL = '/api'
+const API_REGISTER_URL = `${API_BASE_URL}/register`
 const ERROR_DEFAULT_MESSAGE = 'Gagal mendaftar, silakan cek data Anda'
 
 export const useRegistrationStore = defineStore('registration', {
@@ -16,20 +14,14 @@ export const useRegistrationStore = defineStore('registration', {
   }),
 
   actions: {
-    /**
-     * Submit registration data to the server
-     * @param {Object} formData - Registration form data
-     * @returns {Promise<boolean>} - Success status
-     */
     async submitRegistration(formData) {
       this.isSubmitting = true
       this.registrationError = null
 
       try {
-        // Map form data to API payload structure
         const payload = this._mapFormDataToPayload(formData)
         
-        const response = await fetch(API_URL, {
+        const response = await fetch(API_REGISTER_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -43,7 +35,7 @@ export const useRegistrationStore = defineStore('registration', {
           throw new Error(errorData.message || ERROR_DEFAULT_MESSAGE)
         }
         
-        await response.json() // Process response data if needed
+        await response.json()
         
         // Update store state on success
         this.registrationData = { ...formData }
@@ -57,27 +49,18 @@ export const useRegistrationStore = defineStore('registration', {
       }
     },
 
-    /**
-     * Reset registration state
-     */
     resetRegistration() {
       this.registrationData = null
       this.registrationSuccess = false
       this.registrationError = null
     },
     
-    /**
-     * Map form data to API payload structure
-     * @param {Object} formData - Registration form data
-     * @returns {Object} - API payload
-     * @private
-     */
     _mapFormDataToPayload(formData) {
       return {
         nama: formData.fullName,
         email: formData.email,
         password: formData.password,
-        captcha: formData.captcha
+        captcha: formData.captcha,
       }
     }
   }

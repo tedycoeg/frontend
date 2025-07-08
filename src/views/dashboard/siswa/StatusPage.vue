@@ -1,28 +1,96 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 
-// Demo: Ganti status ke 'processing', 'accepted', atau 'rejected' untuk melihat tampilan yang berbeda
-const status = ref('processing')
+const API_BASE_URL = '/api'
+const API_ENDPOINTS = {
+  STATUS: `${API_BASE_URL}/pendaftaran/cekstatus`
+}
 
-// const status = ref('')
-// const fetchStatus = async () => {
-//   try {
-//     const response = await api.get('/student/application-status')
-//     status.value = response.data.status
-//   } catch (error) {
-//     console.error('Error fetching status:', error)
-//   }
-// }
-// onMounted(fetchStatus)
+const status = ref('processing')
+const isLoading = ref(true)
+const errorMsg = ref('')
+
+const makeApiRequest = async (url, method = 'GET', body = null) => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      throw new Error('Token tidak ditemukan')
+    }
+
+    const options = {
+      method,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }
+
+    if (body) {
+      options.body = JSON.stringify(body)
+    }
+
+    const response = await fetch(url, options)
+    
+    if (response.status === 404) {
+      return { notFound: true }
+    }
+    
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return { data }
+  } catch (error) {
+    console.error(`API request error:`, error)
+    throw error
+  }
+}
+
+const fetchStatus = async () => {
+  isLoading.value = true
+  
+  try {
+    const result = await makeApiRequest(API_ENDPOINTS.STATUS)
+    
+    if (result.notFound) {
+      return
+    }
+    
+    const data = result.data
+    
+    if (data?.payload?.data?.status) {
+      const statusCode = data.payload.data.status
+      
+      if (statusCode === 2) {
+        status.value = 'accepted'
+      } else if (statusCode === 3) {
+        status.value = 'rejected'
+      }
+    }
+  } catch (error) {
+    console.error('Status fetch error:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(fetchStatus)
 </script>
 
 <template>
   <div>
     <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Hasil Seleksi</h1>
 
-    <div v-if="status === 'processing'" class="flex flex-col items-center">
-      <div
+    <div v-if="isLoading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <span class="ml-3 text-lg text-blue-500 font-medium">Memuat status pendaftaran...</span>
+    </div>
+
+    <div v-else class="flex flex-col items-center">
+      <!-- Processing UI -->
+      <div v-if="status === 'processing'"
         class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-8 flex flex-col items-center justify-center mb-6 w-full shadow-md border border-blue-200 transform transition-all duration-500 hover:shadow-lg"
       >
         <div
@@ -60,7 +128,8 @@ const status = ref('processing')
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm mb-6 w-full mx-auto">
+      <!-- Processing info box -->
+      <div v-if="status === 'processing'" class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm mb-6 w-full mx-auto">
         <div class="flex items-start">
           <div class="flex-shrink-0 pt-0.5">
             <Icon icon="healthicons:info-24px" width="20" height="20" class="text-primary" />
@@ -78,10 +147,9 @@ const status = ref('processing')
           </div>
         </div>
       </div>
-    </div>
 
-    <div v-else-if="status === 'accepted'" class="flex flex-col items-center">
-      <div
+      <!-- Accepted UI -->
+      <div v-if="status === 'accepted'"
         class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-8 flex flex-col items-center justify-center mb-6 w-full shadow-md border border-green-200 transform transition-all duration-500 hover:shadow-lg"
       >
         <div
@@ -119,7 +187,8 @@ const status = ref('processing')
         </div>
       </div>
 
-      <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm mb-6 w-full mx-auto">
+      <!-- Accepted info box -->
+      <div v-if="status === 'accepted'" class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm mb-6 w-full mx-auto">
         <div class="flex items-start">
           <div class="flex-shrink-0 pt-0.5">
             <Icon icon="icon-park-solid:check-one" width="24" height="24" class="text-green-500" />
@@ -141,16 +210,16 @@ const status = ref('processing')
         </div>
       </div>
 
-      <button
+      <!-- Download button for accepted status -->
+      <button v-if="status === 'accepted'"
         class="bg-blue-300 hover:bg-blue-400 text-white font-medium py-3 px-12 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center"
       >
         <Icon icon="material-symbols:download-rounded" width="24" height="24" class="mr-2" />
         Unduh
       </button>
-    </div>
 
-    <div v-else-if="status === 'rejected'" class="flex flex-col items-center">
-      <div
+      <!-- Rejected UI -->
+      <div v-if="status === 'rejected'"
         class="bg-gradient-to-r from-red-50 to-red-100 rounded-xl p-8 flex flex-col items-center justify-center mb-6 w-full shadow-md border border-red-200 transform transition-all duration-500 hover:shadow-lg"
       >
         <div
@@ -174,7 +243,8 @@ const status = ref('processing')
         <h3 class="text-2xl font-bold text-red-600 mb-2">Ditolak</h3>
       </div>
 
-      <div class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm mb-6 w-full mx-auto">
+      <!-- Rejected info box -->
+      <div v-if="status === 'rejected'" class="bg-white rounded-xl p-6 border border-gray-200 shadow-sm mb-6 w-full mx-auto">
         <div class="flex items-start">
           <div class="flex-shrink-0 pt-0.5">
             <Icon icon="mingcute:warning-fill" width="24" height="24" class="text-red-500" />

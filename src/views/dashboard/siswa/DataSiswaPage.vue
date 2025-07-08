@@ -1,20 +1,63 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { Icon } from '@iconify/vue'
 
+// API Configuration
+const API_BASE_URL = '/api'
+const API_ENDPOINTS = {
+  BIODATA: `${API_BASE_URL}/siswa/biodata`,
+  ORANGTUA: `${API_BASE_URL}/siswa/orangtua`
+}
+
+// Constants for mapping values
+const JENJANG_PENDIDIKAN_TO_ID = {
+  'TK': 1,
+  'SD': 2,
+  'SMP': 3,
+  'SMK': 4
+}
+
+const JENJANG_PENDIDIKAN_FROM_ID = {
+  1: 'TK',
+  2: 'SD',
+  3: 'SMP',
+  4: 'SMK'
+}
+
+const JALUR_PENDAFTARAN_TO_ID = {
+  'regular': 1,
+  'khusus_anak_yatim': 2
+}
+
+const JALUR_PENDAFTARAN_FROM_ID = {
+  1: 'regular',
+  2: 'khusus_anak_yatim'
+}
+
 const authStore = useAuthStore()
+
+// UI State
 const isSaving = ref(false)
 const isSavingParent = ref(false)
 const errorMsg = ref('')
 const showSuccessMsg = ref(false)
 const successMsg = ref('')
 
+// Success popup state
+const showSuccessPopup = ref(false)
+const successPopupMsg = ref('')
+
+// Form State
+const isFormFilled = ref(false)
+const isParentFormFilled = ref(false)
+
 // State untuk data siswa
 const profile = ref({
   educationLevel: '',
   gender: '',
   nik: '',
+  nisn: '', 
   fullName: authStore.currentUser?.name || '',
   birthPlace: '',
   birthDate: '',
@@ -25,7 +68,7 @@ const profile = ref({
   livingWith: '',
   emergencyContact: '',
   previousSchool: '',
-  registrationType: '',
+  registrationType: 'regular',
   activeEmail: authStore.currentUser?.email || '',
 })
 
@@ -46,7 +89,11 @@ const parentProfile = ref({
   email_aktif: '',
 })
 
-// Utility untuk HTTP requests
+// Computed properties
+const showNisnField = computed(() => {
+  return profile.value.educationLevel === 'SMP' || profile.value.educationLevel === 'SMK'
+})
+
 const makeApiRequest = async (url, method = 'GET', body = null) => {
   const token = localStorage.getItem('token')
   if (!token) {
@@ -75,7 +122,6 @@ const makeApiRequest = async (url, method = 'GET', body = null) => {
   return response
 }
 
-// Fungsi untuk menampilkan pesan sukses sementara
 const showSuccess = (message) => {
   successMsg.value = message
   showSuccessMsg.value = true
@@ -84,12 +130,26 @@ const showSuccess = (message) => {
   }, 3000)
 }
 
-// Fungsi untuk memetakan data siswa ke format API
+// Menampilkan popup sukses
+const showSuccessPopupMessage = (message) => {
+  successPopupMsg.value = message
+  showSuccessPopup.value = true
+  setTimeout(() => {
+    showSuccessPopup.value = false
+  }, 5000)
+}
+
+// Menutup popup sukses
+const closeSuccessPopup = () => {
+  showSuccessPopup.value = false
+}
+
 const mapProfileToApiBody = () => {
   return {
-    jenjang_pendidikan: profile.value.educationLevel,
+    jenjang_pendidikan: JENJANG_PENDIDIKAN_TO_ID[profile.value.educationLevel] || '',
     nama_lengkap: profile.value.fullName,
     nik: profile.value.nik,
+    nisn: profile.value.nisn || '',
     tempat_lahir: profile.value.birthPlace,
     tanggal_lahir: profile.value.birthDate || '',
     jenis_kelamin: profile.value.gender,
@@ -99,21 +159,52 @@ const mapProfileToApiBody = () => {
     kodepos: profile.value.postalCode,
     tinggal_bersama: profile.value.livingWith,
     kontak_darurat: profile.value.emergencyContact,
-    jalur_pendaftaran: profile.value.registrationType || '',
+    jalur_pendaftaran: JALUR_PENDAFTARAN_TO_ID[profile.value.registrationType] || 1,
     asal_sekolah: profile.value.previousSchool
   }
 }
 
-// Fungsi untuk menyimpan data siswa
+const mapApiDataToProfile = (data) => {
+  return {
+    educationLevel: JENJANG_PENDIDIKAN_FROM_ID[data.jenjang_pendidikan] || '',
+    gender: data.jenis_kelamin || '',
+    nik: data.nik || '',
+    nisn: data.nisn || '',
+    fullName: data.nama_lengkap || authStore.currentUser?.name || '',
+    birthPlace: data.tempat_lahir || '',
+    birthDate: data.tanggal_lahir || '',
+    religion: data.agama || '',
+    citizenship: data.kewarganegaraan || '',
+    fullAddress: data.alamat_lengkap || '',
+    postalCode: data.kodepos || '',
+    livingWith: data.tinggal_bersama || '',
+    emergencyContact: data.kontak_darurat || '',
+    previousSchool: data.asal_sekolah || '',
+    registrationType: JALUR_PENDAFTARAN_FROM_ID[data.jalur_pendaftaran] || 'regular',
+    activeEmail: data.email || authStore.currentUser?.email || '',
+  }
+}
+
 const saveProfile = async () => {
+  // Don't proceed if form is already filled
+  if (isFormFilled.value) {
+    showSuccess('Data sudah terisi dan tidak dapat diubah')
+    return
+  }
+
   isSaving.value = true
   errorMsg.value = ''
 
   try {
     const body = mapProfileToApiBody()
-    await makeApiRequest('https://api.al-farabi.id/siswa/biodata', 'POST', body)
+    await makeApiRequest(API_ENDPOINTS.BIODATA, 'POST', body)
     
-    showSuccess('Data berhasil disimpan')
+    // Tampilkan popup sukses
+    showSuccessPopupMessage('Data siswa berhasil disimpan')
+    
+    // Refresh data dan set form sebagai sudah terisi
+    await fetchStudentBiodata()
+    
   } catch (error) {
     console.error('Error saving profile:', error)
     errorMsg.value = error.message || 'Terjadi kesalahan saat menyimpan data'
@@ -122,15 +213,25 @@ const saveProfile = async () => {
   }
 }
 
-// Fungsi untuk menyimpan data orang tua
 const saveParentProfile = async () => {
+  // Don't proceed if form is already filled
+  if (isParentFormFilled.value) {
+    showSuccess('Data orang tua sudah terisi dan tidak dapat diubah')
+    return
+  }
+
   isSavingParent.value = true
   errorMsg.value = ''
   
   try {
-    await makeApiRequest('https://api.al-farabi.id/siswa/orangtua', 'POST', parentProfile.value)
+    await makeApiRequest(API_ENDPOINTS.ORANGTUA, 'POST', parentProfile.value)
     
-    showSuccess('Data orang tua berhasil disimpan')
+    // Tampilkan popup sukses
+    showSuccessPopupMessage('Data orang tua berhasil disimpan')
+    
+    // Refresh data dan set form sebagai sudah terisi
+    await fetchParentData()
+    
   } catch (error) {
     console.error('Error saving parent profile:', error)
     errorMsg.value = error.message || 'Terjadi kesalahan saat menyimpan data orang tua'
@@ -139,59 +240,67 @@ const saveParentProfile = async () => {
   }
 }
 
-// Fungsi untuk mendapatkan data siswa dan orang tua yang telah tersimpan
 const fetchExistingData = async () => {
   try {
-    // Fetch profile data
-    const profileResponse = await makeApiRequest('https://api.al-farabi.id/siswa/biodata')
-    const profileData = await profileResponse.json()
-    
-    if (profileData.payload && profileData.payload.data) {
-      // Map API data to form fields
-      const data = profileData.payload.data
-      profile.value = {
-        educationLevel: data.jenjang_pendidikan || '',
-        gender: data.jenis_kelamin || '',
-        nik: data.nik || '',
-        fullName: data.nama_lengkap || authStore.currentUser?.name || '',
-        birthPlace: data.tempat_lahir || '',
-        birthDate: data.tanggal_lahir || '',
-        religion: data.agama || '',
-        citizenship: data.kewarganegaraan || '',
-        fullAddress: data.alamat_lengkap || '',
-        postalCode: data.kodepos || '',
-        livingWith: data.tinggal_bersama || '',
-        emergencyContact: data.kontak_darurat || '',
-        previousSchool: data.asal_sekolah || '',
-        registrationType: data.jalur_pendaftaran || '',
-        activeEmail: data.email || authStore.currentUser?.email || '',
-      }
-    }
+    // Fetch student biodata
+    await fetchStudentBiodata()
     
     // Fetch parent data
-    const parentResponse = await makeApiRequest('https://api.al-farabi.id/siswa/orangtua')
-    const parentData = await parentResponse.json()
-    
-    if (parentData.payload && parentData.payload.data) {
-      parentProfile.value = parentData.payload.data
-    }
-    
+    await fetchParentData()
   } catch (error) {
     console.error('Error fetching existing data:', error)
-    // Silent fail - we just won't pre-fill the form
   }
 }
 
-// Load data saat komponen dimuat
-onMounted(() => {
-  fetchExistingData()
-})
+const fetchStudentBiodata = async () => {
+  try {
+    const profileResponse = await makeApiRequest(API_ENDPOINTS.BIODATA)
+    const profileData = await profileResponse.json()
+    
+    if (!profileData.payload?.data) return
+    
+    // Check if form is already filled
+    if (profileData.payload.data.isFilled) {
+      isFormFilled.value = true
+      // Get data from nested structure
+      const biodata = profileData.payload.data.data || {}
+      profile.value = mapApiDataToProfile(biodata)
+    } else {
+      // Use regular structure
+      profile.value = mapApiDataToProfile(profileData.payload.data)
+    }
+  } catch (error) {
+    console.error('Error fetching student biodata:', error)
+  }
+}
+
+const fetchParentData = async () => {
+  try {
+    const parentResponse = await makeApiRequest(API_ENDPOINTS.ORANGTUA)
+    const parentData = await parentResponse.json()
+    
+    if (!parentData.payload?.data) return
+    
+    // Check if parent form is already filled
+    if (parentData.payload.data.isFilled) {
+      isParentFormFilled.value = true
+      parentProfile.value = parentData.payload.data.data || {}
+    } else {
+      parentProfile.value = parentData.payload.data || {}
+    }
+  } catch (error) {
+    console.error('Error fetching parent data:', error)
+  }
+}
+
+// Load data when component is mounted
+onMounted(fetchExistingData)
 </script>
 
 <template>
   <div>
     <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
-      Form Pengisian Data Calon Siswa
+      {{ isFormFilled ? 'Data Calon Siswa' : 'Form Pengisian Data Calon Siswa' }}
     </h1>
 
     <!-- Error message -->
@@ -206,6 +315,11 @@ onMounted(() => {
       <button @click="showSuccessMsg = false" class="float-right font-bold">&times;</button>
     </div>
 
+    <!-- Notifikasi data sudah terisi -->
+    <div v-if="isFormFilled" class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg mb-4">
+      <span>Data siswa sudah terisi dan tidak dapat diubah. Silakan lanjutkan ke tahap berikutnya.</span>
+    </div>
+
     <form @submit.prevent="saveProfile" class="space-y-8">
       <div
         class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-300"
@@ -214,49 +328,65 @@ onMounted(() => {
         <div class="flex flex-wrap gap-4">
           <label
             class="flex items-center p-3 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-blue-50"
-            :class="{ 'bg-blue-100 border-blue-300': profile.educationLevel === 'TK' }"
+            :class="{ 
+              'bg-blue-100 border-blue-300': profile.educationLevel === 'TK',
+              'cursor-not-allowed': isFormFilled 
+            }"
           >
             <input
               type="radio"
               v-model="profile.educationLevel"
               value="TK"
               class="mr-2 accent-blue-600"
+              :disabled="isFormFilled"
             />
             <span class="font-medium">TK</span>
           </label>
           <label
             class="flex items-center p-3 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-blue-50"
-            :class="{ 'bg-blue-100 border-blue-300': profile.educationLevel === 'SD' }"
+            :class="{ 
+              'bg-blue-100 border-blue-300': profile.educationLevel === 'SD',
+              'cursor-not-allowed': isFormFilled 
+            }"
           >
             <input
               type="radio"
               v-model="profile.educationLevel"
               value="SD"
               class="mr-2 accent-blue-600"
+              :disabled="isFormFilled"
             />
             <span class="font-medium">SD</span>
           </label>
           <label
             class="flex items-center p-3 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-blue-50"
-            :class="{ 'bg-blue-100 border-blue-300': profile.educationLevel === 'SMP' }"
+            :class="{ 
+              'bg-blue-100 border-blue-300': profile.educationLevel === 'SMP',
+              'cursor-not-allowed': isFormFilled 
+            }"
           >
             <input
               type="radio"
               v-model="profile.educationLevel"
               value="SMP"
               class="mr-2 accent-blue-600"
+              :disabled="isFormFilled"
             />
             <span class="font-medium">SMP</span>
           </label>
           <label
             class="flex items-center p-3 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-blue-50"
-            :class="{ 'bg-blue-100 border-blue-300': profile.educationLevel === 'SMK' }"
+            :class="{ 
+              'bg-blue-100 border-blue-300': profile.educationLevel === 'SMK',
+              'cursor-not-allowed': isFormFilled 
+            }"
           >
             <input
               type="radio"
               v-model="profile.educationLevel"
               value="SMK"
               class="mr-2 accent-blue-600"
+              :disabled="isFormFilled"
             />
             <span class="font-medium">SMK</span>
           </label>
@@ -270,25 +400,33 @@ onMounted(() => {
         <div class="flex flex-wrap gap-4">
           <label
             class="flex items-center p-3 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-blue-50"
-            :class="{ 'bg-blue-100 border-blue-300': profile.gender === 'Laki-laki' }"
+            :class="{ 
+              'bg-blue-100 border-blue-300': profile.gender === 'Laki-laki',
+              'cursor-not-allowed': isFormFilled 
+            }"
           >
             <input
               type="radio"
               v-model="profile.gender"
               value="Laki-laki"
               class="mr-2 accent-blue-600"
+              :disabled="isFormFilled"
             />
             <span class="font-medium">Laki-laki</span>
           </label>
           <label
             class="flex items-center p-3 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-blue-50"
-            :class="{ 'bg-blue-100 border-blue-300': profile.gender === 'Perempuan' }"
+            :class="{ 
+              'bg-blue-100 border-blue-300': profile.gender === 'Perempuan',
+              'cursor-not-allowed': isFormFilled 
+            }"
           >
             <input
               type="radio"
               v-model="profile.gender"
               value="Perempuan"
               class="mr-2 accent-blue-600"
+              :disabled="isFormFilled"
             />
             <span class="font-medium">Perempuan</span>
           </label>
@@ -298,7 +436,7 @@ onMounted(() => {
       <div
         class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-300"
       >
-        <h2 class="text-lg font-semibold text-gray-700 mb-4">Data Pribadi Siswa</h2>
+        <h2 class="text-lg font-semibold text-gray-700 mb-4">Biodata Calon Siswa</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="space-y-1">
             <label class="text-sm text-gray-600">NIK</label>
@@ -308,6 +446,20 @@ onMounted(() => {
               placeholder="Nomor Induk Kependudukan"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
+            />
+          </div>
+
+          <div v-if="showNisnField" class="space-y-1">
+            <label class="text-sm text-gray-600">NISN (jika ada)</label>
+            <input
+              type="text"
+              v-model="profile.nisn"
+              placeholder="Nomor Induk Siswa Nasional"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             />
           </div>
 
@@ -316,20 +468,39 @@ onMounted(() => {
             <input
               type="text"
               v-model="profile.fullName"
-              placeholder="Nama lengkap sesuai akta kelahiran"
+              placeholder="Nama Lengkap Siswa"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             />
           </div>
 
+          <div class="space-y-1">
+            <label class="text-sm text-gray-600">Jalur Pendaftaran</label>
+            <select
+              v-model="profile.registrationType"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
+            >
+              <option value="regular">Regular</option>
+              <option value="khusus_anak_yatim">Khusus Anak Yatim</option>
+            </select>
+          </div>
+
+          <!-- Tambahkan disabled dan class untuk semua input lainnya -->
           <div class="space-y-1">
             <label class="text-sm text-gray-600">Tempat Lahir</label>
             <input
               type="text"
               v-model="profile.birthPlace"
-              placeholder="Jakarta"
+              placeholder="Tempat Lahir"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             />
           </div>
 
@@ -340,15 +511,20 @@ onMounted(() => {
               v-model="profile.birthDate"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             />
           </div>
 
+          <!-- Lanjutkan untuk semua field lainnya -->
           <div class="space-y-1">
             <label class="text-sm text-gray-600">Agama</label>
             <select
               v-model="profile.religion"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             >
               <option value="" disabled selected>Pilih agama</option>
               <option value="Islam">Islam</option>
@@ -368,6 +544,8 @@ onMounted(() => {
               placeholder="Contoh: Indonesia"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             />
           </div>
 
@@ -379,6 +557,8 @@ onMounted(() => {
               rows="3"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             ></textarea>
           </div>
 
@@ -390,6 +570,8 @@ onMounted(() => {
               placeholder="Kode pos"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             />
           </div>
 
@@ -399,6 +581,8 @@ onMounted(() => {
               v-model="profile.livingWith"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             >
               <option value="" disabled selected>Pilih</option>
               <option value="Orang Tua">Orang Tua</option>
@@ -416,6 +600,8 @@ onMounted(() => {
               placeholder="Nomor telepon darurat"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             />
           </div>
 
@@ -426,6 +612,8 @@ onMounted(() => {
               v-model="profile.previousSchool"
               placeholder="Nama sekolah sebelumnya"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              :disabled="isFormFilled"
+              :class="{ 'bg-gray-100': isFormFilled }"
             />
           </div>
         </div>
@@ -447,59 +635,79 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="flex justify-center pt-4">
+      <div class="flex justify-end">
         <button
           type="submit"
-          class="bg-blue-300 hover:bg-blue-400 text-white font-medium py-3 px-12 rounded-lg w-full md:w-auto min-w-[200px] shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
-          :disabled="isSaving"
+          class="px-6 py-3 bg-blue-800 text-white font-semibold rounded-lg hover:bg-blue-900 transition-colors duration-300 flex items-center"
+          :disabled="isFormFilled || isSaving"
+          :class="{ 'opacity-50 cursor-not-allowed': isFormFilled || isSaving }"
         >
-          <span v-if="isSaving" class="flex items-center justify-center">
-            <svg
-              class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              ></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            Menyimpan...
-          </span>
-          <span v-else>Simpan</span>
+          <Icon v-if="isSaving" icon="eos-icons:loading" class="mr-2" />
+          <span>{{ isSaving ? 'Menyimpan...' : 'Simpan Data' }}</span>
         </button>
       </div>
     </form>
 
-    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6 mt-12">
-      Form Pengisian Data Orang Tua
-    </h1>
+    <!-- Form data orang tua -->
+    <form @submit.prevent="saveParentProfile" class="space-y-8 mt-12">
+      <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
+        {{ isParentFormFilled ? 'Data Orang Tua' : 'Form Pengisian Data Orang Tua' }}
+      </h1>
 
-    <form @submit.prevent="saveParentProfile" class="space-y-8">
+      <!-- Notifikasi data orang tua sudah terisi -->
+      <div v-if="isParentFormFilled" class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg mb-4">
+        <span>Data orang tua sudah terisi dan tidak dapat diubah. Silakan lanjutkan ke tahap berikutnya.</span>
+      </div>
+
       <div
         class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-300"
       >
         <h2 class="text-lg font-semibold text-gray-700 mb-4">Data Ayah</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="space-y-1">
-            <label class="text-sm text-gray-600">Nama Ayah</label>
+            <label class="text-sm text-gray-600">Nama Lengkap Ayah</label>
             <input
               type="text"
               v-model="parentProfile.nama_ayah"
-              placeholder="Nama lengkap ayah"
+              placeholder="Nama Lengkap Ayah"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
             />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-sm text-gray-600">Pekerjaan Ayah</label>
+            <input
+              type="text"
+              v-model="parentProfile.pekerjaan_ayah"
+              placeholder="Pekerjaan Ayah"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-sm text-gray-600">Pendidikan Terakhir Ayah</label>
+            <select
+              v-model="parentProfile.pendidikan_terakhir_ayah"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
+            >
+              <option value="" disabled selected>Pilih pendidikan</option>
+              <option value="SD">SD</option>
+              <option value="SMP">SMP</option>
+              <option value="SMA/SMK">SMA/SMK</option>
+              <option value="D3">D3</option>
+              <option value="S1">S1</option>
+              <option value="S2">S2</option>
+              <option value="S3">S3</option>
+            </select>
           </div>
 
           <div class="space-y-1">
@@ -507,9 +715,11 @@ onMounted(() => {
             <input
               type="text"
               v-model="parentProfile.tempat_lahir_ayah"
-              placeholder="Tempat lahir ayah"
+              placeholder="Tempat Lahir Ayah"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
             />
           </div>
 
@@ -520,20 +730,57 @@ onMounted(() => {
               v-model="parentProfile.tanggal_lahir_ayah"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-300"
+      >
+        <h2 class="text-lg font-semibold text-gray-700 mb-4">Data Ibu</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-1">
+            <label class="text-sm text-gray-600">Nama Lengkap Ibu</label>
+            <input
+              type="text"
+              v-model="parentProfile.nama_ibu"
+              placeholder="Nama Lengkap Ibu"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
             />
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm text-gray-600">Pendidikan Terakhir Ayah</label>
-            <select
-              v-model="parentProfile.pendidikan_terakhir_ayah"
+            <label class="text-sm text-gray-600">Pekerjaan Ibu</label>
+            <input
+              type="text"
+              v-model="parentProfile.pekerjaan_ibu"
+              placeholder="Pekerjaan Ibu"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-sm text-gray-600">Pendidikan Terakhir Ibu</label>
+            <select
+              v-model="parentProfile.pendidikan_terakhir_ibu"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
             >
               <option value="" disabled selected>Pilih pendidikan</option>
-              <option value="SD">SD/Sederajat</option>
-              <option value="SMP">SMP/Sederajat</option>
-              <option value="SMA">SMA/Sederajat</option>
+              <option value="SD">SD</option>
+              <option value="SMP">SMP</option>
+              <option value="SMA/SMK">SMA/SMK</option>
               <option value="D3">D3</option>
               <option value="S1">S1</option>
               <option value="S2">S2</option>
@@ -542,38 +789,15 @@ onMounted(() => {
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm text-gray-600">Pekerjaan Ayah</label>
-            <input
-              type="text"
-              v-model="parentProfile.pekerjaan_ayah"
-              placeholder="Pekerjaan ayah"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-              required
-            />
-          </div>
-        </div>
-
-        <h2 class="text-lg font-semibold text-gray-700 mb-4 mt-8">Data Ibu</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="space-y-1">
-            <label class="text-sm text-gray-600">Nama Ibu</label>
-            <input
-              type="text"
-              v-model="parentProfile.nama_ibu"
-              placeholder="Nama lengkap ibu"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-              required
-            />
-          </div>
-
-          <div class="space-y-1">
             <label class="text-sm text-gray-600">Tempat Lahir Ibu</label>
             <input
               type="text"
               v-model="parentProfile.tempat_lahir_ibu"
-              placeholder="Tempat lahir ibu"
+              placeholder="Tempat Lahir Ibu"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
             />
           </div>
 
@@ -584,59 +808,40 @@ onMounted(() => {
               v-model="parentProfile.tanggal_lahir_ibu"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
-            />
-          </div>
-
-          <div class="space-y-1">
-            <label class="text-sm text-gray-600">Pendidikan Terakhir Ibu</label>
-            <select
-              v-model="parentProfile.pendidikan_terakhir_ibu"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-              required
-            >
-              <option value="" disabled selected>Pilih pendidikan</option>
-              <option value="SD">SD/Sederajat</option>
-              <option value="SMP">SMP/Sederajat</option>
-              <option value="SMA">SMA/Sederajat</option>
-              <option value="D3">D3</option>
-              <option value="S1">S1</option>
-              <option value="S2">S2</option>
-              <option value="S3">S3</option>
-            </select>
-          </div>
-
-          <div class="space-y-1">
-            <label class="text-sm text-gray-600">Pekerjaan Ibu</label>
-            <input
-              type="text"
-              v-model="parentProfile.pekerjaan_ibu"
-              placeholder="Pekerjaan ibu"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-              required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
             />
           </div>
         </div>
+      </div>
 
-        <h2 class="text-lg font-semibold text-gray-700 mb-4 mt-8">Data Kontak</h2>
+      <div
+        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all duration-300"
+      >
+        <h2 class="text-lg font-semibold text-gray-700 mb-4">Data Wali & Kontak</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="space-y-1">
-            <label class="text-sm text-gray-600">Nama Wali (Jika ada)</label>
+            <label class="text-sm text-gray-600">Nama Wali (Opsional)</label>
             <input
               type="text"
               v-model="parentProfile.nama_wali"
-              placeholder="Nama lengkap wali"
+              placeholder="Nama Wali jika ada"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
             />
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm text-gray-600">Nomor HP/WA Aktif</label>
+            <label class="text-sm text-gray-600">No. HP/WA Aktif</label>
             <input
-              type="tel"
+              type="text"
               v-model="parentProfile.nohp_hpwa_aktif"
-              placeholder="Contoh: 081234567890"
+              placeholder="Nomor HP/WA yang aktif"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
             />
           </div>
 
@@ -645,46 +850,62 @@ onMounted(() => {
             <input
               type="email"
               v-model="parentProfile.email_aktif"
-              placeholder="Contoh: orangtua@email.com"
+              placeholder="Email aktif"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               required
+              :disabled="isParentFormFilled"
+              :class="{ 'bg-gray-100': isParentFormFilled }"
             />
           </div>
         </div>
       </div>
 
-      <div class="flex justify-center pt-4">
+      <div class="flex justify-end">
         <button
           type="submit"
-          class="bg-blue-300 hover:bg-blue-400 text-white font-medium py-3 px-12 rounded-lg w-full md:w-auto min-w-[200px] shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
-          :disabled="isSavingParent"
+          class="px-6 py-3 bg-blue-800 text-white font-semibold rounded-lg hover:bg-blue-900 transition-colors duration-300 flex items-center"
+          :disabled="isParentFormFilled || isSavingParent"
+          :class="{ 'opacity-50 cursor-not-allowed': isParentFormFilled || isSavingParent }"
         >
-          <span v-if="isSavingParent" class="flex items-center justify-center">
-            <svg
-              class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              ></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            Menyimpan...
-          </span>
-          <span v-else>Simpan Data Orang Tua</span>
+          <Icon v-if="isSavingParent" icon="eos-icons:loading" class="mr-2" />
+          <span>{{ isSavingParent ? 'Menyimpan...' : 'Simpan Data Orang Tua' }}</span>
         </button>
       </div>
     </form>
+
+    <!-- Success Popup -->
+    <div 
+      v-if="showSuccessPopup" 
+      class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 transition-opacity"
+    >
+      <div class="bg-white rounded-lg max-w-md mx-auto p-6 shadow-2xl transform transition-all">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 bg-green-100 rounded-full p-2">
+              <Icon icon="mdi:check-circle" width="24" height="24" class="text-green-600" />
+            </div>
+            <h3 class="ml-3 text-lg font-medium text-gray-900">Berhasil</h3>
+          </div>
+          <button 
+            @click="closeSuccessPopup" 
+            class="text-gray-400 hover:text-gray-500 focus:outline-none"
+          >
+            <Icon icon="mdi:close" width="24" height="24" />
+          </button>
+        </div>
+        <div class="mt-3">
+          <p class="text-sm text-gray-700">{{ successPopupMsg }}</p>
+        </div>
+        <div class="mt-5 flex justify-end">
+          <button
+            type="button"
+            @click="closeSuccessPopup"
+            class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
