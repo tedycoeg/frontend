@@ -1,35 +1,63 @@
-# al-farabi-frontend
+# Al-Farabi Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+Frontend application for Al-Farabi School's student registration system.
 
-## Recommended IDE Setup
+## Overview
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+This application provides a complete student registration system for Al-Farabi School, including:
 
-## Customize configuration
+- User registration and authentication
+- Student biodata form submission
+- Parent information form submission
+- Document upload functionality
+- Registration status checking
+- Registration progress timeline
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## Technologies
 
-## Project Setup
+- Vue 3
+- Vite
+- Pinia for state management
+- Tailwind CSS for styling
 
-```sh
+## Environment Setup
+
+The application uses environment variables to configure API endpoints:
+
+- Development: API calls are proxied through Vite's development server
+- Production: API calls go directly to the backend API server
+
+### Environment Files
+
+- `.env.development` - Development environment settings
+- `.env.production` - Production environment settings
+
+## Development
+
+```bash
+# Install dependencies
 npm install
-```
 
-### Compile and Hot-Reload for Development
-
-```sh
+# Start development server
 npm run dev
 ```
 
-### Compile and Minify for Production
+## Build for Production
 
-```sh
+```bash
+# Build the application
 npm run build
+
+# Preview the production build
+npm run preview
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## API Configuration
 
-```sh
-npm run lint
-```
+The application connects to the Al-Farabi backend API. API base URL is configured via environment variables:
+
+- `VITE_API_URL` - Base URL for API requests
+
+## Deployment
+
+The application is deployed at [https://al-farabi.walver.dev](https://al-farabi.walver.dev)
