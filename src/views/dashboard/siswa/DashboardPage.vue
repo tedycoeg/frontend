@@ -9,7 +9,7 @@ const API_ENDPOINTS = {
 
 const isLoading = ref(true)
 const timelineStatus = ref({
-  registrasi: 'completed',  // Always completed
+  registrasi: 'completed',
   biodata: 'pending',
   dokumen: 'pending',
   selesai: 'pending'
@@ -78,7 +78,9 @@ const fetchTimelineStatus = async () => {
     }
     
     // Step 4: Pendaftaran Selesai
-    if (result.data?.payload?.data?.status === 1) {
+    const status = result.data.payload.data.status 
+
+    if ([1,2,3].includes(status)) {
       timelineStatus.value.selesai = 'completed'
       statusMessage.value = 'Pendaftaran Selesai'
     } else {
@@ -143,7 +145,7 @@ onMounted(fetchTimelineStatus)
           <Icon icon="solar:arrow-down-linear" width="24" height="24" class="text-primary mr-2" />
           Langkah Selanjutnya
         </h2>
-        <ol class="list-decimal pl-5 space-y-2 text-gray-600 mb-4">
+        <ol class="list-disc pl-5 space-y-2 text-gray-600 mb-4">
           <li v-if="timelineStatus.biodata === 'pending'">Lengkapi data calon siswa</li>
           <li v-if="timelineStatus.dokumen === 'pending'">Unggah berkas persyaratan</li>
           <li v-if="timelineStatus.selesai === 'pending'">Periksa hasil seleksi</li>

@@ -2,7 +2,13 @@
 import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 
-// State untuk berita
+// API Configuration
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const API_ENDPOINTS = {
+  GET_ALL_BERITA: `${API_BASE_URL}/admin/getAllBerita`,
+  BERITA: `${API_BASE_URL}/admin/berita`,
+}
+
 const beritaList = ref([])
 const selectedBerita = ref(null)
 const isEditing = ref(false)
@@ -10,19 +16,16 @@ const isAdding = ref(false)
 const isLoading = ref(false)
 const errorMsg = ref('')
 
-// State untuk form
 const newBerita = ref({
   judul: '',
-  tanggal: '',
-  gambar: null,
   isi: '',
+  gambar: null,
+  fileToUpload: null
 })
 
-// Referensi untuk file input
 const fileInput = ref(null)
 
-// Utility untuk HTTP requests
-const makeRequest = async (url, method = 'GET', body = null) => {
+const makeFormDataRequest = async (url, method, formData) => {
   const token = localStorage.getItem('adminToken')
   if (!token) {
     throw new Error('Token tidak ditemukan, silakan login kembali')
@@ -32,11 +35,8 @@ const makeRequest = async (url, method = 'GET', body = null) => {
     method,
     headers: {
       'Authorization': `Bearer ${token}`
-    }
-  }
-
-  if (body) {
-    options.body = body
+    },
+    body: formData
   }
 
   const response = await fetch(url, options)
@@ -53,16 +53,29 @@ const makeRequest = async (url, method = 'GET', body = null) => {
 const fetchBerita = async () => {
   isLoading.value = true
   try {
-    const response = await makeRequest('https://api.al-farabi.id/admin/getAllBerita')
+    // Using direct fetch since we need the full URL path
+    const response = await fetch(API_ENDPOINTS.GET_ALL_BERITA, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Gagal mengambil data berita')
+    }
+    
     const data = await response.json()
     
     if (data && data.payload && Array.isArray(data.payload.data)) {
-      beritaList.value = data.payload.data.map(berita => ({
+      beritaList.value = data.payload.data
+      .filter(berita => berita.typeBerita === 'umum')
+      .map(berita => ({
         id: berita.id_berita,
         judul: berita.judul,
-        tanggal: berita.tanggal,
-        gambar: berita.gambar,
-        isi: berita.isi
+        isi: berita.isi,
+        gambar: berita.gambar_url,
+        createdAt: berita.createdAt
       }))
     }
   } catch (error) {
@@ -77,9 +90,8 @@ const fetchBerita = async () => {
 const addBerita = () => {
   newBerita.value = {
     judul: '',
-    tanggal: new Date().toISOString().split('T')[0],
-    gambar: null,
     isi: '',
+    gambar: null,
     fileToUpload: null
   }
   isAdding.value = true
@@ -90,7 +102,7 @@ const addBerita = () => {
 const editBerita = (berita) => {
   selectedBerita.value = { 
     ...berita,
-    fileToUpload: null  // Tambahan untuk menyimpan file yang akan diupload
+    fileToUpload: null
   }
   isEditing.value = true
   isAdding.value = false
@@ -104,20 +116,15 @@ const saveBerita = async () => {
     const formData = new FormData()
     
     if (isEditing.value && selectedBerita.value) {
-      // Edit berita
       formData.append('judul', selectedBerita.value.judul)
       formData.append('isi', selectedBerita.value.isi)
-      
-      if (selectedBerita.value.tanggal) {
-        formData.append('tanggal', selectedBerita.value.tanggal)
-      }
       
       if (selectedBerita.value.fileToUpload) {
         formData.append('gambar', selectedBerita.value.fileToUpload)
       }
       
-      await makeRequest(
-        `https://api.al-farabi.id/admin/berita/${selectedBerita.value.id}`, 
+      await makeFormDataRequest(
+        `${API_ENDPOINTS.BERITA}/${selectedBerita.value.id}`, 
         'PUT', 
         formData
       )
@@ -126,13 +133,8 @@ const saveBerita = async () => {
       selectedBerita.value = null
       
     } else if (isAdding.value) {
-      // Tambah berita baru
       formData.append('judul', newBerita.value.judul)
       formData.append('isi', newBerita.value.isi)
-      
-      if (newBerita.value.tanggal) {
-        formData.append('tanggal', newBerita.value.tanggal)
-      }
       
       if (newBerita.value.fileToUpload) {
         formData.append('gambar', newBerita.value.fileToUpload)
@@ -140,14 +142,13 @@ const saveBerita = async () => {
         throw new Error('Gambar harus diunggah')
       }
       
-      await makeRequest('https://api.al-farabi.id/admin/berita', 'POST', formData)
+      await makeFormDataRequest(API_ENDPOINTS.BERITA, 'POST', formData)
       
       isAdding.value = false
       newBerita.value = {
         judul: '',
-        tanggal: '',
-        gambar: null,
         isi: '',
+        gambar: null,
         fileToUpload: null
       }
     }
@@ -172,7 +173,12 @@ const deleteBerita = async (id) => {
   isLoading.value = true
   
   try {
-    await makeRequest(`https://api.al-farabi.id/admin/berita/${id}`, 'DELETE')
+    await fetch(`${API_ENDPOINTS.BERITA}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    })
     
     // Refresh data berita
     await fetchBerita()
@@ -190,14 +196,12 @@ const handleFileUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
   
-  // Validasi tipe file (gambar)
   if (!file.type.match('image.*')) {
     alert('Format file harus gambar (JPG, PNG, dll)')
     event.target.value = ''
     return
   }
   
-  // Validasi ukuran file (max 2MB)
   if (file.size > 2 * 1024 * 1024) {
     alert('Ukuran gambar terlalu besar. Maksimal 2MB.')
     event.target.value = ''
@@ -236,13 +240,12 @@ onMounted(() => {
       <h1 class="text-3xl font-bold text-white">Berita</h1>
     </div>
 
-    <!-- Error message -->
     <div v-if="errorMsg" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
       <span>{{ errorMsg }}</span>
       <button @click="errorMsg = ''" class="float-right font-bold">&times;</button>
     </div>
 
-    <div class="flex justify-start mb-8">
+    <div class="flex justify-between items-center mb-8">
       <button
         @click="addBerita"
         class="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white font-medium py-2 px-4 rounded-lg flex items-center shadow-lg cursor-pointer"
@@ -250,6 +253,9 @@ onMounted(() => {
         <Icon icon="ic:round-plus" width="24" height="24" class="mr-2" />
         Tambah
       </button>
+      <div class="text-gray-500 text-sm">
+        Total: {{ beritaList.length }} berita
+      </div>
     </div>
 
     <div v-if="isEditing || isAdding" class="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -278,23 +284,6 @@ onMounted(() => {
         </div>
 
         <div>
-          <label class="block text-gray-700 mb-2">Tanggal</label>
-          <input
-            type="date"
-            :value="isEditing ? (selectedBerita ? selectedBerita.tanggal?.slice(0, 10) : '') : newBerita.tanggal"
-            @input="
-              (e) =>
-                isEditing
-                  ? selectedBerita
-                    ? (selectedBerita.tanggal = e.target.value)
-                    : null
-                  : (newBerita.tanggal = e.target.value)
-            "
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
           <label class="block text-gray-700 mb-2">Gambar</label>
           <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
             <div
@@ -307,8 +296,11 @@ onMounted(() => {
                 class="mx-auto max-h-48"
               />
             </div>
-            <label class="cursor-pointer text-gray-500">
-              Tambah Foto
+            <label class="cursor-pointer text-gray-500 hover:text-blue-500 transition duration-300">
+              <div class="flex flex-col items-center">
+                <Icon icon="mdi:image-plus" width="32" height="32" class="mb-2" />
+                <span>Tambah Foto</span>
+              </div>
               <input type="file" class="hidden" @change="handleFileUpload" accept="image/*" ref="fileInput" />
             </label>
           </div>
@@ -332,10 +324,16 @@ onMounted(() => {
           ></textarea>
         </div>
 
-        <div class="flex justify-center">
+        <div class="flex justify-between">
+          <button
+            @click="isEditing ? (isEditing = false) : (isAdding = false)"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-6 rounded-lg transition duration-300 cursor-pointer"
+          >
+            Batal
+          </button>
           <button
             @click="saveBerita"
-            class="bg-blue-300 hover:bg-blue-400 text-white font-medium py-3 px-8 rounded-lg transition duration-300 cursor-pointer"
+            class="bg-blue-400 hover:bg-blue-500 text-white font-medium py-2 px-6 rounded-lg transition duration-300 cursor-pointer"
             :disabled="isLoading"
           >
             <span v-if="isLoading" class="flex items-center justify-center">
@@ -381,33 +379,36 @@ onMounted(() => {
     </div>
 
     <div v-else>
-      <div class="space-y-6">
+      <div class="space-y-4">
         <div
           v-for="berita in beritaList"
           :key="berita.id"
-          class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition duration-300 cursor-pointer"
-          @click="editBerita(berita)"
+          class="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition duration-300"
         >
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold text-primary">{{ berita.judul }}</h3>
-            <button
-              @click.stop="deleteBerita(berita.id)"
-              class="text-red-500 hover:text-red-700 cursor-pointer"
-            >
-              <Icon icon="material-symbols:delete-outline-rounded" width="24" height="24" />
-            </button>
+          <div class="flex justify-between items-start">
+            <h3 class="text-xl font-bold text-primary mb-2">{{ berita.judul }}</h3>
+            <div class="flex space-x-3">
+              <button
+                @click="editBerita(berita)"
+                class="text-blue-500 hover:text-blue-700 flex items-center"
+              >
+                <Icon icon="mdi:pencil" width="20" height="20" />
+              </button>
+              <button
+                @click.stop="deleteBerita(berita.id)"
+                class="text-red-500 hover:text-red-700 cursor-pointer"
+              >
+                <Icon icon="material-symbols:delete-outline-rounded" width="20" height="20" />
+              </button>
+            </div>
           </div>
-          <p class="text-gray-500 mb-4">
-            {{ formatDate(berita.tanggal) }}
+          
+          <p class="text-gray-500 text-sm mb-3">
+            {{ formatDate(berita.createdAt) }}
           </p>
-          <div class="flex mb-4">
-            <img 
-              v-if="berita.gambar" 
-              :src="berita.gambar" 
-              alt="Thumbnail berita" 
-              class="w-32 h-24 object-cover rounded-lg mr-4"
-            />
-            <p class="text-gray-700 line-clamp-3 flex-1">{{ berita.isi }}</p>
+          
+          <div>
+            <p class="text-gray-700 line-clamp-3">{{ berita.isi }}</p>
           </div>
         </div>
       </div>
