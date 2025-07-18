@@ -35,7 +35,7 @@ const handleLogin = async () => {
       <h1 class="text-2xl font-bold text-white text-center">PENDAFTARAN PESERTA DIDIK BARU</h1>
     </div>
 
-    <h2 class="text-4xl font-bold text-white mb-8">LOGIN USER</h2>
+    <h2 class="text-4xl font-bold text-white mb-8">LOGIN</h2>
 
     <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
       <form @submit.prevent="handleLogin" class="space-y-6">
