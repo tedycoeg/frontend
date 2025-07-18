@@ -15,27 +15,21 @@ const handleLogin = async () => {
   })
 
   if (result.success) {
-    const role = authStore.user?.role
-
-    if (role === 1) {
-      router.push('/admin/dashboard')
-    } else if (role === 2) {
-      router.push('/dashboard')
-    } else {
-      alert('Role tidak dikenali. Hubungi admin.')
-    }
+    router.push('/dashboard')
   }
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-blue-300 flex flex-col items-center justify-center py-12 px-4">
+  <div
+    class="min-h-screen bg-blue-300 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
+  >
     <div class="flex flex-col items-center mb-8">
       <img src="/images/logo.svg" alt="Al-Farabi Logo" class="h-32 mb-6" />
       <h1 class="text-2xl font-bold text-white text-center">PENDAFTARAN PESERTA DIDIK BARU</h1>
     </div>
 
-    <h2 class="text-4xl font-bold text-white mb-8">LOGIN</h2>
+    <h2 class="text-4xl font-bold text-white mb-8">LOGIN USER</h2>
 
     <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
       <form @submit.prevent="handleLogin" class="space-y-6">
