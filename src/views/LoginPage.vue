@@ -15,15 +15,21 @@ const handleLogin = async () => {
   })
 
   if (result.success) {
-    router.push('/dashboard')
+    const role = authStore.user?.role
+
+    if (role === 1) {
+      router.push('/admin/dashboard')
+    } else if (role === 2) {
+      router.push('/dashboard')
+    } else {
+      alert('Role tidak dikenali. Hubungi admin.')
+    }
   }
 }
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-blue-300 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
-  >
+  <div class="min-h-screen bg-blue-300 flex flex-col items-center justify-center py-12 px-4">
     <div class="flex flex-col items-center mb-8">
       <img src="/images/logo.svg" alt="Al-Farabi Logo" class="h-32 mb-6" />
       <h1 class="text-2xl font-bold text-white text-center">PENDAFTARAN PESERTA DIDIK BARU</h1>
