@@ -26,7 +26,10 @@ const handleReset = async () => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/reset-password/${token}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: password.value }),
+      body: JSON.stringify({
+        token, // kirim token di body juga
+        password: password.value,
+      }),
     })
 
     const data = await res.json()
