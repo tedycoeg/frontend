@@ -85,7 +85,19 @@ const routes = [
         name: "AdminLogin",
         component: () => import("@/views/dashboard/admin/LoginPage.vue"),
         meta: { title: "Al-Farabi - Login Admin" }
+      },{
+        path: "forgot-password",
+        name: "ForgotPassword",
+        component: () => import("@/views/ForgotPasswordPage.vue"),
+        meta: { title: "Al-Farabi - Lupa Password" }
       },
+      {
+        path: "reset-password/:token",
+        name: "ResetPassword",
+        component: () => import("@/views/ResetPasswordPage.vue"),
+        meta: { title: "Al-Farabi - Reset Password" }
+      },
+      
     ]
   },
   {

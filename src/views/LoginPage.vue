@@ -72,7 +72,17 @@ const handleLogin = async () => {
         </div>
       </form>
 
-      <div class="mt-16 text-center">
+      <!-- 🔥 Tambahan link "Lupa Password?" -->
+      <div class="mt-4 text-center">
+        <router-link
+          to="/forgot-password"
+          class="text-sm text-blue-600 hover:underline"
+        >
+          Lupa Password?
+        </router-link>
+      </div>
+
+      <div class="mt-10 text-center">
         <router-link
           to="/"
           class="inline-block bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium py-2 px-6 rounded-md transition duration-300"
