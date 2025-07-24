@@ -37,21 +37,24 @@ const extracurriculars = ref([
 const testimonials = ref([
   {
     id: 1,
-    name: 'GRACE',
-    message: 'Sekolah Al Farabi memberikan pengalaman belajar yang menyenangkan!',
-    avatar: '/images/testimonials.webp',
+    name: 'AISYAH',
+    message:
+      'Sejak anak saya bersekolah di Al Farabi, saya melihat perkembangan akhlak dan kemandiriannya sangat pesat. Sekolah ini benar-benar memadukan pendidikan akademik dan karakter.',
+    avatar: '/images/1.jpg',
   },
   {
     id: 2,
-    name: 'GRACE',
-    message: 'Sekolah Al Farabi memberikan pengalaman belajar yang menyenangkan!',
-    avatar: '/images/testimonials.webp',
+    name: 'RUDI',
+    message:
+      'Guru-guru di Al Farabi sangat perhatian dan komunikatif. Anak saya merasa nyaman dan semangat berangkat sekolah setiap hari.',
+    avatar: '/images/2.jpg',
   },
   {
     id: 3,
-    name: 'GRACE',
-    message: 'Sekolah Al Farabi memberikan pengalaman belajar yang menyenangkan!',
-    avatar: '/images/testimonials.webp',
+    name: 'LINA',
+    message:
+      'Saya senang karena Al Farabi tidak hanya fokus pada nilai, tapi juga pada pembentukan akhlak dan spiritual anak. Lingkungannya sangat positif dan mendukung.',
+    avatar: '/images/3.jpg',
   },
 ])
 </script>
