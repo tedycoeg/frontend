@@ -22,16 +22,16 @@ const fetchCaptcha = async () => {
   captchaLoading.value = true
   try {
     const url = `${CAPTCHA_URL}?${Date.now()}`
-    
+
     const response = await fetch(url, {
       method: 'GET',
-      credentials: 'include'
+      credentials: 'include',
     })
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch captcha: ${response.status}`)
     }
-    
+
     const blob = await response.blob()
     captchaUrl.value = URL.createObjectURL(blob)
   } catch (error) {
@@ -123,12 +123,28 @@ onMounted(() => {
               <span class="text-gray-700 mr-4">CAPTCHA</span>
               <div class="text-white px-4 py-2 rounded font-mono text-lg">
                 <div v-if="captchaLoading" class="h-16 flex items-center justify-center">
-                  <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    class="animate-spin h-6 w-6 text-blue-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                 </div>
-                <img v-else :src="captchaUrl" alt="CAPTCHA" class="h-16 w-auto">
+                <img v-else :src="captchaUrl" alt="CAPTCHA" class="h-16 w-auto" />
               </div>
               <button
                 type="button"
@@ -223,24 +239,32 @@ onMounted(() => {
             <div class="flex text-blue-700 mt-2">
               Password harap disimpan dengan baik, untuk digunakan pada proses login berikutnya
             </div>
+
+            <div class="flex justify-start mt-4 print:hidden">
+              <button
+                @click="printRegistration"
+                class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-8 rounded-lg"
+              >
+                Download Data Pendaftaran
+              </button>
+            </div>
           </div>
 
           <div class="mt-8">
             <p class="mb-2 text-justify">
-              Untuk selanjutnya silahkan masuk ke dashboard Calon Peserta Didik Baru
-              <a href="/login" class="font-semibold text-blue-500">link berikut</a> untuk
-              pendaftaran ulang dan pelengkapan berkas yang dibutuhkan
+              Untuk selanjutnya silahkan login dan masuk ke dashboard Calon Peserta Didik Baru,
+              untuk pendaftaran ulang dan pelengkapan berkas yang dibutuhkan.
             </p>
           </div>
         </div>
 
         <div class="flex justify-center mt-6 print:hidden">
-          <button
-            @click="printRegistration"
-            class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-12 rounded-lg"
+          <a
+            href="/login"
+            class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-12 rounded-lg text-center"
           >
-            DOWNLOAD
-          </button>
+            Klik menuju halaman login
+          </a>
         </div>
       </div>
     </div>
