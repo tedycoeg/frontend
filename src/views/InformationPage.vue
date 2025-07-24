@@ -11,7 +11,8 @@
           </h1>
 
           <a
-            href="#"
+            href="/files/brosur.pdf"
+            download
             class="inline-block mt-6 bg-primary hover:bg-blue-700 text-white font-bold py-3 px-12 rounded-lg text-xl transition-colors"
           >
             BROSUR
